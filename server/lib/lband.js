@@ -1,4 +1,4 @@
-// L-band subsurface grid — seeded by real PALSAR scene coverage when available.
+// L-band subsurface grid - seeded by real PALSAR scene coverage when available.
 
 function makeRng(seed) {
   let a = seed >>> 0;
@@ -81,8 +81,8 @@ export function buildSubsurfaceGrid(gridSize, seed, lbandContext) {
 
 /** Estimated effective penetration depth label based on L-band physics & cover. */
 export function penetrationDepthLabel(lbandContext) {
-  if (!lbandContext?.palsar?.covered) return "0–3 m (regional prior, no direct PALSAR tile)";
+  if (!lbandContext?.palsar?.covered) return "0-3 m (regional prior, no direct PALSAR tile)";
   const pols = lbandContext.palsar.polarizations?.length || 0;
-  if (pols >= 2) return "3–15 m under vegetation (HH+HV L-band)";
-  return "1–8 m under light cover (L-band HH)";
+  if (pols >= 2) return "3-15 m under vegetation (HH+HV L-band)";
+  return "1-8 m under light cover (L-band HH)";
 }

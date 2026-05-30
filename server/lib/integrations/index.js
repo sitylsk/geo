@@ -1,4 +1,4 @@
-// Regional intelligence orchestrator — aggregates all external data feeds for an AOI.
+// Regional intelligence orchestrator - aggregates all external data feeds for an AOI.
 
 import { normaliseAoi } from "../engine.js";
 import { fetchEarthquakes, fetchMrdsDeposits, fetchNwisNear } from "./usgs.js";

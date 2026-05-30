@@ -1,4 +1,4 @@
-// Commodity spot prices — Metals.live fallback to gold-api.com.
+// Commodity spot prices - Metals.live fallback to gold-api.com.
 
 const METALS_LIVE = "https://api.metals.live/v1/spot";
 const GOLD_API = "https://api.gold-api.com/price";

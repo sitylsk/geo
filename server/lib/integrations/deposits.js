@@ -1,4 +1,4 @@
-// Curated deposit KBs + nearby search — lithium brine, BGS UK, global occurrences.
+// Curated deposit KBs + nearby search - lithium brine, BGS UK, global occurrences.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -79,10 +79,10 @@ export function fetchIeaDemand(commodityId) {
 
 export function fetchSupplyChainNote(commodityId) {
   const notes = {
-    copper: "IEA: copper demand doubles by 2040 under net-zero — supply gap widening.",
-    lithium: "IEA: lithium demand ~3× by 2030 — brine & hard-rock both critical.",
-    "gold-orogenic": "USGS: gold remains safe-haven — all-in sustaining costs rising.",
-    ree: "IEA/USGS: rare earth separation capacity concentrated — diversification priority.",
+    copper: "IEA: copper demand doubles by 2040 under net-zero - supply gap widening.",
+    lithium: "IEA: lithium demand ~3× by 2030 - brine & hard-rock both critical.",
+    "gold-orogenic": "USGS: gold remains safe-haven - all-in sustaining costs rising.",
+    ree: "IEA/USGS: rare earth separation capacity concentrated - diversification priority.",
   };
   return notes[commodityId] || "USGS/IEA: critical mineral supply chains under structural pressure to 2040.";
 }

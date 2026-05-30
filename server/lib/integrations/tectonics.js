@@ -1,4 +1,4 @@
-// Bird 2002 global tectonic plate boundaries — nearest plate context.
+// Bird 2002 global tectonic plate boundaries - nearest plate context.
 
 const PLATES_URL =
   "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json";

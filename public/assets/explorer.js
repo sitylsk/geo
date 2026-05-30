@@ -6,6 +6,7 @@ const state = {
   current: null,
   lastResult: null,
   lastAi: null,
+  documents: [],
   heatOverlay: null,
   aoiRect: null,
   targetLayer: null,
@@ -209,7 +210,7 @@ function renderTargets() {
 }
 
 function targetPopup(t) {
-  return `<div class="tpop"><h4>${t.id} — Priority ${t.tier}</h4>
+  return `<div class="tpop"><h4>${t.id} - Priority ${t.tier}</h4>
     <div class="pmeta">${t.lat.toFixed(4)}, ${t.lng.toFixed(4)} · search halo ~${t.radiusKm} km</div>
     <div class="pmeta" style="margin-top:6px">Confidence: <b>${(t.confidence * 100).toFixed(0)}%</b></div></div>`;
 }
@@ -238,7 +239,7 @@ function renderResults(result, ai) {
     <div class="row"><span>Targets</span><b>${result.targets.length} (${tA} priority A)</b></div>
   </div>`;
   if (result.xrayStack?.active) {
-    html += `<div class="coverage-badge">X-ray stack active — magnetics, gravity, geochem, thermal, L-band fused with depth slices</div>`;
+    html += `<div class="coverage-badge">X-ray stack active - magnetics, gravity, geochem, thermal, L-band fused with depth slices</div>`;
   } else if (result.deepScan?.active) {
     html += `<div class="coverage-badge">L-band deep scan · ${result.deepScan.palsarScenes} PALSAR scene(s) · ${result.deepScan.penetration}</div>`;
   }
@@ -253,8 +254,12 @@ function renderResults(result, ai) {
   });
 
   if (ai?.summary) {
+    const note = ai.simulated
+      ? `<div class="brief-note">Grounded analysis generated from live free data feeds and the geological knowledge base. Connect an AI key for an additional model-fusion pass.</div>`
+      : `<div class="brief-note">AI-fused analysis grounded on live free data feeds and the geological knowledge base.</div>`;
     html += `<div class="section-label">Intelligence brief</div>`;
-    html += `<div class="final-card">${escapeHtml(ai.summary)}</div>`;
+    html += note;
+    html += `<div class="final-card">${renderBrief(ai.summary)}</div>`;
   }
 
   body.innerHTML = html;
@@ -265,10 +270,66 @@ function renderResults(result, ai) {
   });
 }
 
+function renderBrief(md) {
+  const safe = escapeHtml(md);
+  const lines = safe.split("\n");
+  let out = "";
+  let inList = false;
+  for (let raw of lines) {
+    const line = raw.replace(/\r$/, "");
+    if (/^# /.test(line)) { if (inList) { out += "</ul>"; inList = false; } out += `<h3 class="brief-h1">${line.slice(2)}</h3>`; }
+    else if (/^## /.test(line)) { if (inList) { out += "</ul>"; inList = false; } out += `<h4 class="brief-h2">${line.slice(3)}</h4>`; }
+    else if (/^- /.test(line)) { if (!inList) { out += "<ul class=\"brief-ul\">"; inList = true; } out += `<li>${line.slice(2)}</li>`; }
+    else if (/\|/.test(line) && line.split("|").length >= 3) {
+      if (inList) { out += "</ul>"; inList = false; }
+      const cells = line.split("|").map((c) => c.trim());
+      out += `<div class="brief-trow">${cells.map((c) => `<span>${c}</span>`).join("")}</div>`;
+    }
+    else if (line.trim() === "") { if (inList) { out += "</ul>"; inList = false; } }
+    else { if (inList) { out += "</ul>"; inList = false; } out += `<p>${line}</p>`; }
+  }
+  if (inList) out += "</ul>";
+  return out;
+}
+
 function escapeHtml(s) {
   return (s || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 }
 
+
+
+/* ---- Operator document upload (read client-side, free) ---- */
+const TEXT_EXT = /\.(txt|csv|tsv|json|md|log|geojson)$/i;
+function renderDocList() {
+  const el = $("doc-list");
+  if (!el) return;
+  if (!state.documents.length) { el.innerHTML = ""; return; }
+  el.innerHTML = state.documents
+    .map((d, i) => `<div class="doc-item"><span>${d.name}</span><button data-i="${i}" class="doc-rm">x</button></div>`)
+    .join("");
+  el.querySelectorAll(".doc-rm").forEach((b) =>
+    b.addEventListener("click", () => {
+      state.documents.splice(parseInt(b.dataset.i, 10), 1);
+      renderDocList();
+    }),
+  );
+}
+const docInput = $("doc-input");
+if (docInput) {
+  docInput.addEventListener("change", async (e) => {
+    const files = [...e.target.files];
+    for (const f of files) {
+      if (state.documents.length >= 12) break;
+      let text = "";
+      if (TEXT_EXT.test(f.name) && f.size < 2_000_000) {
+        try { text = await f.text(); } catch { text = ""; }
+      }
+      state.documents.push({ name: f.name, type: f.type || "text", text });
+    }
+    renderDocList();
+    e.target.value = "";
+  });
+}
 
 async function fetchIntelligence(aoi, commodityId) {
   try {
@@ -300,7 +361,7 @@ function renderIntelligence(intel) {
   html += `</div>`;
   html += `<div class="intel-card"><h4>📡 Magnetics</h4><p>${intel.noaa?.magnetic?.totalFieldN} nT · decl ${intel.noaa?.magnetic?.declinationDeg}°</p></div>`;
   html += `<div class="intel-card"><h4>🔥 Climate / soil</h4><p>Elev ${intel.openMeteo?.elevationM} m · soil ${intel.openMeteo?.soilTemp?.surface0cm}°C → ${intel.openMeteo?.soilTemp?.deep54cm}°C</p></div>`;
-  html += `<div class="intel-card"><h4>🧭 Tectonics</h4><p>${intel.tectonics?.nearestBoundary?.plateBoundary || "—"} boundary · ${intel.tectonics?.nearestBoundary?.distanceKm || "—"} km</p></div>`;
+  html += `<div class="intel-card"><h4>🧭 Tectonics</h4><p>${intel.tectonics?.nearestBoundary?.plateBoundary || " - "} boundary · ${intel.tectonics?.nearestBoundary?.distanceKm || " - "} km</p></div>`;
   html += `<div class="intel-card"><h4>💰 Commodity prices</h4><p>${intel.commodities?.spotPrices?.source}</p>`;
   prices.forEach((p) => { html += `<div class="intel-row">${p.name || p.metal}: $${typeof p.usd === "number" ? p.usd.toFixed(2) : p.usd}</div>`; });
   html += `</div>`;
@@ -337,6 +398,7 @@ async function runScan(withAi) {
     aoiLabel: `${aoi.lat.toFixed(3)}, ${aoi.lng.toFixed(3)}`,
     deepScan: $("deep-scan").checked || $("xray-scan").checked,
     xrayScan: $("xray-scan").checked,
+    documents: withAi ? state.documents : undefined,
   };
   try {
     setStatus(withAi ? "Generating intelligence report…" : "Scanning…", true);
@@ -363,8 +425,11 @@ async function runScan(withAi) {
     renderOverlays();
     renderTargets();
     renderResults(result, ai);
-    setStatus("Loading regional intelligence…", true);
-    const intel = await fetchIntelligence(aoi, $("commodity").value);
+    let intel = withAi ? data.intel : null;
+    if (!intel) {
+      setStatus("Loading regional intelligence…", true);
+      intel = await fetchIntelligence(aoi, $("commodity").value);
+    }
     if (intel) {
       $("results-body").insertAdjacentHTML("beforeend", renderIntelligence(intel));
     }
@@ -473,7 +538,7 @@ $("export-geojson").addEventListener("click", () => {
 $("export-report").addEventListener("click", () => {
   if (!state.lastResult) return setStatus("Run a scan first");
   const r = state.lastResult;
-  let txt = `Anthill — Target Report\nResource: ${r.commodity.name}\nGenerated: ${r.generatedAt}\n\nRANKED TARGETS\n`;
+  let txt = `Anthill - Target Report\nResource: ${r.commodity.name}\nGenerated: ${r.generatedAt}\n\nRANKED TARGETS\n`;
   r.targets.forEach((t) => {
     txt += `\n${t.id} [Priority ${t.tier}] ${(t.confidence * 100).toFixed(0)}%\n  ${t.lat}, ${t.lng} (halo ~${t.radiusKm} km)\n`;
   });

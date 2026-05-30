@@ -39,7 +39,7 @@ export const DATA_SOURCES = {
       wavelength: "5.6 cm (C-band)",
       agency: "ESA Copernicus",
       access: "Microsoft Planetary Computer STAC",
-      capability: "Surface change & wetness — complements L-band depth context",
+      capability: "Surface change & wetness - complements L-band depth context",
     },
   ],
   internalModels: [
@@ -97,8 +97,8 @@ export async function queryDeepScanCoverage(bounds) {
     sceneSeed,
     penetrationNote:
       palsar.count > 0
-        ? "L-band SAR coverage confirmed — canopy-penetrating subsurface scan active."
-        : "No PALSAR mosaic tile for this AOI — subsurface model uses regional L-band priors.",
+        ? "L-band SAR coverage confirmed - canopy-penetrating subsurface scan active."
+        : "No PALSAR mosaic tile for this AOI - subsurface model uses regional L-band priors.",
   };
 }
 

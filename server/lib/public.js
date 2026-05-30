@@ -1,4 +1,4 @@
-// Public-facing serializers — strip internal methodology before anything
+// Public-facing serializers - strip internal methodology before anything
 // reaches the browser or export files.
 
 export function publicCommodity(c) {
@@ -69,7 +69,12 @@ export function publicEngineResult(result) {
 
 export function publicAiResult(ai) {
   if (!ai) return null;
-  return { summary: ai.final };
+  return {
+    summary: ai.final,
+    sections: ai.sections || null,
+    grounded: Boolean(ai.grounded),
+    simulated: Boolean(ai.simulated),
+  };
 }
 
 export function publicCoverage(coverage) {

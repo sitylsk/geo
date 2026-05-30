@@ -24,6 +24,7 @@ import {
   buildGravityGrid,
   GEOPHYSICAL_SOURCES,
 } from "./lib/geophysical.js";
+import { listRemoteMethods, activeMethods, availableToAdd } from "./lib/remote-methods.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -33,7 +34,7 @@ fs.mkdirSync(dataDir, { recursive: true });
 const app = express();
 app.use(cors());
 app.use(compression());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "8mb" }));
 
 const api = express.Router();
 
@@ -42,20 +43,16 @@ api.get("/health", (_req, res) => {
 });
 
 api.get("/sources", (_req, res) => {
-  res.json({ ...listSources(), geophysical: GEOPHYSICAL_SOURCES, integrations: listIntegrations() });
+  res.json({
+    ...listSources(),
+    geophysical: GEOPHYSICAL_SOURCES,
+    integrations: listIntegrations(),
+    remoteMethods: listRemoteMethods(),
+  });
 });
 
-api.post("/intelligence", async (req, res) => {
-  try {
-    const { aoi, commodityId, radiusKm } = req.body || {};
-    if (!aoi || (typeof aoi.lat !== "number" && typeof aoi.minLat !== "number")) {
-      return res.status(400).json({ error: "aoi with lat/lng required" });
-    }
-    const intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm });
-    res.json(intel);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+api.get("/methods", (_req, res) => {
+  res.json({ active: activeMethods(), available: availableToAdd(), all: listRemoteMethods() });
 });
 
 api.get("/commodities", (_req, res) => {
@@ -71,6 +68,41 @@ api.post("/coverage", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+api.post("/intelligence", async (req, res) => {
+  try {
+    const { aoi, commodityId, radiusKm } = req.body || {};
+    if (!aoi || (typeof aoi.lat !== "number" && typeof aoi.minLat !== "number")) {
+      return res.status(400).json({ error: "aoi with lat/lng required" });
+    }
+    const intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm });
+    res.json(intel);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Accept operator documents as parsed text (free, no upload service needed).
+// Frontend reads text/csv/json client-side; other types send name + note.
+api.post("/documents/parse", (req, res) => {
+  const { documents } = req.body || {};
+  if (!Array.isArray(documents)) {
+    return res.status(400).json({ error: "documents array required" });
+  }
+  const parsed = documents.slice(0, 12).map((d) => {
+    const text = typeof d.text === "string" ? d.text : "";
+    const excerpt = text.slice(0, 600);
+    const wordCount = text ? text.trim().split(/\s+/).length : 0;
+    return {
+      name: d.name || "document",
+      type: d.type || "text",
+      wordCount,
+      excerpt,
+      summary: text ? `${wordCount} words ingested for analysis grounding.` : "Filename noted (binary types are referenced, not parsed).",
+    };
+  });
+  res.json({ accepted: parsed.length, documents: parsed });
 });
 
 async function buildGeophysicalContext(bounds, gridSize, xrayScan) {
@@ -124,13 +156,20 @@ api.post("/scan", async (req, res) => {
 
 api.post("/analyze", async (req, res) => {
   try {
-    const { commodityId, aoiLabel } = req.body || {};
+    const { commodityId, aoi, aoiLabel, documents } = req.body || {};
     if (!getCommodity(commodityId)) {
       return res.status(400).json({ error: `Unknown commodityId: ${commodityId}` });
     }
     const engineResult = await runScanEngine(req.body);
-    const ai = await runPipeline(engineResult, { aoiLabel });
-    res.json({ engine: publicEngineResult(engineResult), ai: publicAiResult(ai) });
+    // Ground the analysis with live regional intelligence.
+    let intel = null;
+    try {
+      intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm: aoi?.radiusKm });
+    } catch {
+      /* intel optional */
+    }
+    const ai = await runPipeline(engineResult, { aoiLabel, intel, documents });
+    res.json({ engine: publicEngineResult(engineResult), ai: publicAiResult(ai), intel });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -173,7 +212,7 @@ function clampInt(v, lo, hi, dflt) {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Anthill running on http://localhost:${PORT}`);
-  console.log(`Satellite stack: L-band PALSAR + WMM magnetics + NASA POWER thermal + X-ray fusion`);
+  console.log(`Free data stack active: L-band PALSAR, WMM magnetics, NASA POWER, USGS, NASA, NOAA, Open-Meteo, IRIS, tectonics.`);
 });
 
 export { app, normaliseAoi };

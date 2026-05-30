@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Explorer — Anthill</title>
+    <title>Explorer - Anthill</title>
     <meta name="description" content="Pick a resource and location. Get a ranked target map and intelligence brief." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -47,7 +47,7 @@
         </div>
 
         <label class="field">
-          <span>Search area — <b id="radius-val">35</b> km</span>
+          <span>Search area - <b id="radius-val">35</b> km</span>
           <input id="radius" type="range" min="5" max="200" value="35" />
         </label>
 
@@ -77,6 +77,14 @@
         <label class="switch deep-scan-toggle"><span>Deep ground scan <small>(L-band SAR)</small></span><input id="deep-scan" type="checkbox" /></label>
         <label class="switch deep-scan-toggle xray-toggle"><span>X-ray subsurface stack <small>(mag + gravity + geochem + thermal)</small></span><input id="xray-scan" type="checkbox" /></label>
 
+        <div class="upload-box">
+          <div class="lc-head">Your documents <small>(optional)</small></div>
+          <p class="hint">Add old survey reports, assays, field notes or CSV data. Text, CSV and JSON are read and fed into the analysis.</p>
+          <label class="btn btn-ghost upload-btn" for="doc-input">+ Add documents</label>
+          <input id="doc-input" type="file" multiple accept=".txt,.csv,.json,.md,.tsv,.log,.geojson" hidden />
+          <div id="doc-list" class="doc-list"></div>
+        </div>
+
         <div class="btn-stack">
           <button id="scan-btn" class="btn btn-primary btn-lg">Run scan</button>
           <button id="analyze-btn" class="btn btn-accent btn-lg">Generate intelligence report</button>
@@ -95,9 +103,9 @@
               <option value="thermal">Temperature</option>
               <option value="moisture">Soil moisture</option>
               <option value="xray">X-ray fusion</option>
-              <option value="depth-shallow">Depth 0–15 m</option>
-              <option value="depth-mid">Depth 15–80 m</option>
-              <option value="depth-deep">Depth 80–250 m</option>
+              <option value="depth-shallow">Depth 0-15 m</option>
+              <option value="depth-mid">Depth 15-80 m</option>
+              <option value="depth-deep">Depth 80-250 m</option>
               <option value="depth-basement">Depth 250 m+</option>
             </select>
           </label>
@@ -105,7 +113,7 @@
           <label class="switch"><span>Target colour map</span><input id="toggle-heat" type="checkbox" checked /></label>
           <label class="switch"><span>Circled targets</span><input id="toggle-targets" type="checkbox" checked /></label>
           <label class="field">
-            <span>Map opacity — <b id="opacity-val">75</b>%</span>
+            <span>Map opacity - <b id="opacity-val">75</b>%</span>
             <input id="opacity" type="range" min="20" max="100" value="75" />
           </label>
           <label class="field">
@@ -125,7 +133,7 @@
           <button id="export-report" class="btn btn-ghost">⬇ Report</button>
         </div>
 
-        <p class="disclaimer">For exploration planning only — validate all targets with field work before economic decisions.</p>
+        <p class="disclaimer">For exploration planning only - validate all targets with field work before economic decisions.</p>
       </aside>
 
       <main class="map-wrap">

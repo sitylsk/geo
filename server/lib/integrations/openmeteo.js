@@ -1,4 +1,4 @@
-// Open-Meteo — elevation, soil temperature at depth, climate.
+// Open-Meteo - elevation, soil temperature at depth, climate.
 
 const FORECAST = "https://api.open-meteo.com/v1/forecast";
 const ELEVATION = "https://api.open-meteo.com/v1/elevation";

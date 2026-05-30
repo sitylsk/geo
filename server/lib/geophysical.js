@@ -66,7 +66,7 @@ function samplePoints(bounds, n = 3) {
   return pts;
 }
 
-/** NASA POWER climatology — real soil temperature, air temp, moisture proxy. */
+/** NASA POWER climatology - real soil temperature, air temp, moisture proxy. */
 export async function fetchThermalContext(bounds) {
   const pts = samplePoints(bounds, 3);
   const results = await Promise.all(
@@ -118,7 +118,7 @@ export function fetchMagneticContext(bounds, gridSize) {
   return { magneticGrid: normaliseGrid(magneticGrid), fMean, source: "WMM-2025 (Swarm-class global model)" };
 }
 
-/** GOCE/GRACE-class gravity proxy — normal gravity + regional gradient. */
+/** GOCE/GRACE-class gravity proxy - normal gravity + regional gradient. */
 export function buildGravityGrid(bounds, gridSize, seed) {
   const rng = makeRng(seed ^ 0x51ed270b);
   const table = buildPhaseTable(rng);
@@ -212,7 +212,7 @@ export function buildGeophysicalStack({
   const magneticGrid = magneticContext?.magneticGrid || geochemGrid;
   const gravityGrid = gravityContext?.gravityGrid || geochemGrid;
 
-  // X-ray fusion — weighted stack simulating multi-physics to depth
+  // X-ray fusion - weighted stack simulating multi-physics to depth
   const weights = {
     magnetic: 0.18,
     gravity: 0.16,
@@ -241,11 +241,11 @@ export function buildGeophysicalStack({
     xrayGrid.push(row);
   }
 
-  // Depth shells — ore body depth visualization (satellite-proxy, not drill depth)
+  // Depth shells - ore body depth visualization (satellite-proxy, not drill depth)
   const depthSlices = {
-    shallow: { label: "0–15 m", grid: blendDepth(xrayGrid, subsurfaceGrid, gridSize, 0.7, 0.3) },
-    mid: { label: "15–80 m", grid: blendDepth(xrayGrid, magneticGrid, gridSize, 0.5, 0.5) },
-    deep: { label: "80–250 m", grid: blendDepth(xrayGrid, gravityGrid, gridSize, 0.35, 0.65) },
+    shallow: { label: "0-15 m", grid: blendDepth(xrayGrid, subsurfaceGrid, gridSize, 0.7, 0.3) },
+    mid: { label: "15-80 m", grid: blendDepth(xrayGrid, magneticGrid, gridSize, 0.5, 0.5) },
+    deep: { label: "80-250 m", grid: blendDepth(xrayGrid, gravityGrid, gridSize, 0.35, 0.65) },
     basement: { label: "250 m+", grid: blendDepth(xrayGrid, gravityGrid, gridSize, 0.2, 0.8) },
   };
 

@@ -1,4 +1,4 @@
-// NASA — EONET natural events, NeoWs near-earth objects, POWER thermal (via geophysical).
+// NASA - EONET natural events, NeoWs near-earth objects, POWER thermal (via geophysical).
 
 const EONET = "https://eonet.gsfc.nasa.gov/api/v3/events";
 const NEOWS = "https://api.nasa.gov/NeoWs/rest/feed";

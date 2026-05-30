@@ -1,4 +1,4 @@
-// IRIS FDSN — seismicity events near AOI.
+// IRIS FDSN - seismicity events near AOI.
 
 const IRIS = "https://service.iris.edu/fdsnws/event/1/query";
 

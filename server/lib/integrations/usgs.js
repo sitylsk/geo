@@ -1,4 +1,4 @@
-// USGS — earthquakes, MRDS mineral deposits (WFS), NWIS water/geochem stations.
+// USGS - earthquakes, MRDS mineral deposits (WFS), NWIS water/geochem stations.
 
 const USGS_EQ = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 const MRDS_WFS = "https://mrdata.usgs.gov/services/mrds";
