@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explorer — TerraShed AI Mineral Discovery</title>
+    <meta name="description" content="Interactive AI exploration map: pick any commodity and any location, get a probability color map with circled targets and dual-AI analysis." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/explorer.css" />
+  </head>
+  <body class="explorer-body">
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/"><span class="logo"></span><span>TerraShed<small>Explorer</small></span></a>
+        <div class="nav-links">
+          <a href="/#how">How it works</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-ghost" href="/">← Home</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="explorer-shell">
+      <!-- Control panel -->
+      <aside class="panel" id="panel">
+        <div class="panel-head">
+          <h2>Target Builder</h2>
+          <span id="provider-badge" class="provider-badge">checking…</span>
+        </div>
+
+        <label class="field">
+          <span>Commodity / Resource</span>
+          <select id="commodity"></select>
+        </label>
+        <p id="commodity-model" class="model-note"></p>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Latitude</span>
+            <input id="lat" type="number" step="0.0001" value="-13.1500" />
+          </label>
+          <label class="field">
+            <span>Longitude</span>
+            <input id="lng" type="number" step="0.0001" value="28.6000" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Search area radius — <b id="radius-val">35</b> km</span>
+          <input id="radius" type="range" min="5" max="200" value="35" />
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Grid resolution</span>
+            <select id="grid">
+              <option value="28">Coarse (28)</option>
+              <option value="36" selected>Standard (36)</option>
+              <option value="48">Fine (48)</option>
+              <option value="60">Ultra (60)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Max targets</span>
+            <select id="maxTargets">
+              <option>4</option>
+              <option selected>6</option>
+              <option>8</option>
+              <option>10</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="hint">Tip: click anywhere on the map to drop the AOI center.</div>
+
+        <div class="btn-stack">
+          <button id="scan-btn" class="btn btn-primary btn-lg">⚡ Run prospectivity scan</button>
+          <button id="analyze-btn" class="btn btn-accent btn-lg">🧠 Dual-AI deep analysis</button>
+        </div>
+
+        <div class="layer-controls">
+          <div class="lc-head">Spectral &amp; map layers</div>
+          <label class="switch"><span>Probability color map</span><input id="toggle-heat" type="checkbox" checked /></label>
+          <label class="switch"><span>Circled targets</span><input id="toggle-targets" type="checkbox" checked /></label>
+          <label class="field">
+            <span>Spectral RGB band preview</span>
+            <select id="spectral-select"><option value="">None (true-colour satellite)</option></select>
+          </label>
+          <label class="field">
+            <span>Color map opacity — <b id="opacity-val">75</b>%</span>
+            <input id="opacity" type="range" min="20" max="100" value="75" />
+          </label>
+          <label class="field">
+            <span>Base map</span>
+            <select id="basemap">
+              <option value="sat">Satellite (HD)</option>
+              <option value="satlabel" selected>Satellite + labels</option>
+              <option value="topo">Topographic</option>
+              <option value="dark">Dark</option>
+              <option value="street">Street</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="export-row">
+          <button id="export-geojson" class="btn btn-ghost">⬇ GeoJSON</button>
+          <button id="export-report" class="btn btn-ghost">⬇ Report</button>
+        </div>
+
+        <p class="disclaimer">Prospectivity is model-derived for planning only — validate with ground geophysics, soil geochem &amp; drilling.</p>
+      </aside>
+
+      <!-- Map -->
+      <main class="map-wrap">
+        <div id="map"></div>
+        <div id="legend" class="legend hidden">
+          <div class="legend-title">Discovery probability</div>
+          <div class="legend-bar"></div>
+          <div class="legend-scale"><span>Low</span><span>Med</span><span>High</span></div>
+        </div>
+        <div id="status" class="status hidden"></div>
+        <button id="results-toggle" class="results-toggle hidden">Results ▸</button>
+      </main>
+
+      <!-- Results drawer -->
+      <section class="results" id="results">
+        <div class="results-head">
+          <h2>Analysis</h2>
+          <button id="results-close" class="icon-btn">✕</button>
+        </div>
+        <div id="results-body" class="results-body">
+          <div class="empty-state">
+            <div class="es-icon">🛰️</div>
+            <h3>No scan yet</h3>
+            <p>Pick a commodity and location, then run a scan or a dual-AI deep analysis. Ranked targets, evidence and the fused AI brief will appear here.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/assets/explorer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contact — TerraShed Explorer</title>
+    <meta name="description" content="Book a pilot scan or talk to the TerraShed exploration intelligence team." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/pages.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/"><span class="logo"></span><span>TerraShed<small>Exploration Intelligence</small></span></a>
+        <div class="nav-links">
+          <a href="/#how">How it works</a>
+          <a href="/#commodities">Commodities</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-primary" href="/explorer">Launch Explorer</a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="section">
+      <div class="container contact-grid">
+        <div>
+          <div class="eyebrow">Contact us today</div>
+          <h2>Send your crew to a pixel, not a province.</h2>
+          <p class="lead">
+            Tell us your commodity, country and licence footprint. We'll scope a pilot and
+            run a free dual-AI scan over one of your target areas.
+          </p>
+          <ul class="contact-points">
+            <li><b>Pilot scans</b> — see ranked targets over your own ground before you commit.</li>
+            <li><b>Data ingest</b> — bring proprietary geophysics, geochem and drillholes.</li>
+            <li><b>Deployment</b> — cloud, VPC or on-prem for sensitive archives.</li>
+          </ul>
+          <div class="contact-meta">
+            <div><span>Email</span><b>sales@terrashed.ai</b></div>
+            <div><span>Response</span><b>Within 1 business day</b></div>
+          </div>
+        </div>
+
+        <div class="card contact-card">
+          <form id="contact-form">
+            <label class="field"><span>Full name *</span><input name="name" required /></label>
+            <label class="field"><span>Work email *</span><input name="email" type="email" required /></label>
+            <label class="field"><span>Company / mine</span><input name="company" /></label>
+            <label class="field">
+              <span>Plan of interest</span>
+              <select name="plan">
+                <option>Undecided</option>
+                <option>Prospector</option>
+                <option>Producer</option>
+                <option>Major</option>
+              </select>
+            </label>
+            <label class="field"><span>What are you exploring for? *</span><textarea name="message" rows="4" required placeholder="e.g. Orogenic gold + copper across 4 licences in NW Zambia"></textarea></label>
+            <button class="btn btn-primary btn-lg" type="submit" id="submit-btn">Request a pilot scan</button>
+            <p id="form-status" class="form-status"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site">
+      <div class="container">
+        <div class="footer-bottom" style="border: none; margin: 0; padding: 0">
+          <span>© <span id="year"></span> TerraShed Explorer.</span>
+          <span><a href="/">Home</a> · <a href="/explorer">Explorer</a> · <a href="/pricing">Pricing</a></span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+      const params = new URLSearchParams(location.search);
+      const planParam = params.get("plan");
+      if (planParam) {
+        const sel = document.querySelector('select[name="plan"]');
+        [...sel.options].forEach((o) => { if (o.value === planParam) sel.value = planParam; });
+      }
+      const form = document.getElementById("contact-form");
+      const status = document.getElementById("form-status");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("submit-btn");
+        btn.disabled = true;
+        status.textContent = "Sending…";
+        status.className = "form-status";
+        const body = Object.fromEntries(new FormData(form).entries());
+        try {
+          const res = await fetch("/api/contact", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed");
+          status.textContent = "Thanks — your request is in. We'll be in touch within one business day.";
+          status.className = "form-status ok";
+          form.reset();
+        } catch (err) {
+          status.textContent = "Error: " + err.message;
+          status.className = "form-status err";
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

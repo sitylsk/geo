@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing — TerraShed Explorer</title>
+    <meta name="description" content="Plans for explorers, mid-tier producers and major mines. Per-licence AI exploration intelligence." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/pages.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/"><span class="logo"></span><span>TerraShed<small>Exploration Intelligence</small></span></a>
+        <div class="nav-links">
+          <a href="/#how">How it works</a>
+          <a href="/#commodities">Commodities</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-primary" href="/explorer">Launch Explorer</a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="section">
+      <div class="container">
+        <div style="text-align: center; max-width: 720px; margin: 0 auto">
+          <div class="eyebrow">Pricing</div>
+          <h2>Plans built for how mines actually explore</h2>
+          <p class="lead" style="margin: 0 auto">
+            From single-permit prospectors to multinational majors. Every plan includes the
+            dual-AI fusion engine, HD spectral color maps and ranked target exports.
+          </p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="card price-card">
+            <div class="tier-name">Prospector</div>
+            <div class="price"><span class="amt">$490</span><span class="per">/ month</span></div>
+            <p class="price-sub">Solo geologists &amp; junior explorers.</p>
+            <ul class="feat">
+              <li>Up to 3 active licence areas</li>
+              <li>All 18+ commodity models</li>
+              <li>Prospectivity color maps + circled targets</li>
+              <li>50 dual-AI deep analyses / month</li>
+              <li>GeoJSON &amp; report export</li>
+              <li>Email support</li>
+            </ul>
+            <a class="btn btn-ghost btn-lg" href="/contact?plan=Prospector">Start with Prospector</a>
+          </div>
+
+          <div class="card price-card featured">
+            <div class="ribbon">Most popular</div>
+            <div class="tier-name">Producer</div>
+            <div class="price"><span class="amt">$2,400</span><span class="per">/ month</span></div>
+            <p class="price-sub">Mid-tier producers &amp; exploration teams.</p>
+            <ul class="feat">
+              <li>Up to 25 licence areas</li>
+              <li>Unlimited dual-AI deep analyses</li>
+              <li>Ultra-fine 60×60 grids</li>
+              <li>Drill-feedback learning loop</li>
+              <li>Multi-user workspace (10 seats)</li>
+              <li>Priority API access &amp; data ingest</li>
+              <li>Dedicated support engineer</li>
+            </ul>
+            <a class="btn btn-primary btn-lg" href="/contact?plan=Producer">Choose Producer</a>
+          </div>
+
+          <div class="card price-card">
+            <div class="tier-name">Major / Survey</div>
+            <div class="price"><span class="amt">Custom</span></div>
+            <p class="price-sub">Majors, nationals &amp; geological surveys.</p>
+            <ul class="feat">
+              <li>Unlimited licence areas &amp; seats</li>
+              <li>Private model fine-tuned on your archives</li>
+              <li>Proprietary geophysics &amp; drillhole ingest</li>
+              <li>On-prem / VPC deployment option</li>
+              <li>Continental-scale batch scanning</li>
+              <li>SSO, audit logs, SLA</li>
+              <li>White-glove onboarding</li>
+            </ul>
+            <a class="btn btn-accent btn-lg" href="/contact?plan=Major">Talk to sales</a>
+          </div>
+        </div>
+
+        <div class="card faq">
+          <h3>What every plan includes</h3>
+          <div class="grid grid-3" style="margin-top: 14px">
+            <div><h4>Dual-AI fusion</h4><p>Claude + GPT independently analyse, combine, re-analyse and fuse into one ranked brief.</p></div>
+            <div><h4>11 fused data layers</h4><p>Magnetics, gravity, radiometrics, geochem, structure and 7 spectral recipes.</p></div>
+            <div><h4>HD color maps</h4><p>ASTER &amp; Sentinel-2 false-colour band ratios over satellite imagery, exportable.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-band">
+      <div class="container cta-inner">
+        <div><h2>Not sure which plan fits your ground?</h2><p class="lead">Tell us your commodity and licence footprint — we'll recommend a plan and run a free pilot scan.</p></div>
+        <a class="btn btn-accent btn-lg" href="/contact">Contact us today</a>
+      </div>
+    </section>
+
+    <footer class="site">
+      <div class="container">
+        <div class="footer-bottom" style="border: none; margin: 0; padding: 0">
+          <span>© <span id="year"></span> TerraShed Explorer. Pricing indicative — final terms in your order form.</span>
+          <span><a href="/">Home</a> · <a href="/explorer">Explorer</a> · <a href="/contact">Contact</a></span>
+        </div>
+      </div>
+    </footer>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

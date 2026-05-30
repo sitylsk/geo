@@ -1,0 +1,203 @@
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin: 44px 0 40px;
+  align-items: start;
+}
+.price-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.price-card.featured {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 1px var(--brand), 0 24px 60px rgba(52, 214, 200, 0.18);
+  transform: translateY(-6px);
+}
+.ribbon {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #04121a;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+.tier-name {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--brand);
+  margin-bottom: 10px;
+}
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.price .amt {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+.price .per {
+  color: var(--muted);
+  font-size: 14px;
+}
+.price-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+.feat {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 22px;
+  flex: 1;
+}
+.feat li {
+  position: relative;
+  padding: 7px 0 7px 26px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.feat li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--brand);
+  font-weight: 800;
+}
+.faq {
+  margin-top: 12px;
+}
+.faq h4 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.faq p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.cta-band {
+  background: linear-gradient(135deg, rgba(52, 214, 200, 0.12), rgba(255, 138, 61, 0.12));
+  border-top: 1px solid var(--border);
+}
+.cta-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+.cta-inner h2 {
+  margin: 0 0 8px;
+}
+
+/* Contact */
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 48px;
+  align-items: start;
+}
+.contact-points {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.contact-points li {
+  padding: 10px 0 10px 24px;
+  position: relative;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.contact-points li::before {
+  content: "▹";
+  position: absolute;
+  left: 0;
+  color: var(--brand);
+}
+.contact-points b {
+  color: var(--text);
+}
+.contact-meta {
+  display: flex;
+  gap: 36px;
+  margin-top: 24px;
+}
+.contact-meta span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.contact-meta b {
+  font-size: 16px;
+}
+.contact-card .field textarea {
+  width: 100%;
+  background: #0a1424;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 10px 11px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.form-status {
+  font-size: 13.5px;
+  margin: 12px 0 0;
+  min-height: 18px;
+}
+.form-status.ok {
+  color: var(--ok);
+}
+.form-status.err {
+  color: var(--danger);
+}
+
+@media (max-width: 960px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  .price-card.featured {
+    transform: none;
+  }
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Shared form fields for contact/pricing pages */
+.field { display: block; margin-bottom: 14px; }
+.field > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+}
+.field input,
+.field select {
+  width: 100%;
+  background: #0a1424;
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 10px 11px;
+  font-size: 14px;
+  font-family: inherit;
+}
