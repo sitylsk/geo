@@ -269,6 +269,60 @@ function escapeHtml(s) {
   return (s || "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
 }
 
+
+async function fetchIntelligence(aoi, commodityId) {
+  try {
+    const res = await fetch("/api/intelligence", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ aoi, commodityId, radiusKm: aoi.radiusKm }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function renderIntelligence(intel) {
+  if (!intel) return "";
+  const eq = intel.seismic?.iris?.events?.slice(0, 3) || [];
+  const mrds = intel.deposits?.mrdsNearby?.slice(0, 5) || [];
+  const prices = intel.commodities?.spotPrices?.prices?.slice(0, 4) || [];
+  const demand = intel.commodities?.demandForecast?.demandIndex;
+  let html = `<div class="section-label">Regional intelligence</div>`;
+  html += `<div class="intel-grid">`;
+  html += `<div class="intel-card"><h4>🌍 USGS MRDS</h4><p>${intel.usgs?.mineralDeposits?.count || 0} known deposits in search area</p>`;
+  mrds.forEach((d) => { html += `<div class="intel-row">${d.name} · ${d.commodity} · ${d.distanceKm} km</div>`; });
+  html += `</div>`;
+  html += `<div class="intel-card"><h4>🧭 Seismicity</h4><p>IRIS: ${intel.seismic?.iris?.count || 0} events · USGS: ${intel.usgs?.earthquakes?.count || 0}</p>`;
+  eq.forEach((e) => { html += `<div class="intel-row">M${e.magnitude} · ${e.location || "regional"}</div>`; });
+  html += `</div>`;
+  html += `<div class="intel-card"><h4>📡 Magnetics</h4><p>${intel.noaa?.magnetic?.totalFieldN} nT · decl ${intel.noaa?.magnetic?.declinationDeg}°</p></div>`;
+  html += `<div class="intel-card"><h4>🔥 Climate / soil</h4><p>Elev ${intel.openMeteo?.elevationM} m · soil ${intel.openMeteo?.soilTemp?.surface0cm}°C → ${intel.openMeteo?.soilTemp?.deep54cm}°C</p></div>`;
+  html += `<div class="intel-card"><h4>🧭 Tectonics</h4><p>${intel.tectonics?.nearestBoundary?.plateBoundary || "—"} boundary · ${intel.tectonics?.nearestBoundary?.distanceKm || "—"} km</p></div>`;
+  html += `<div class="intel-card"><h4>💰 Commodity prices</h4><p>${intel.commodities?.spotPrices?.source}</p>`;
+  prices.forEach((p) => { html += `<div class="intel-row">${p.name || p.metal}: $${typeof p.usd === "number" ? p.usd.toFixed(2) : p.usd}</div>`; });
+  html += `</div>`;
+  if (demand) {
+    html += `<div class="intel-card"><h4>📈 IEA demand index</h4><p>2024→2040: ${demand["2024"]} → ${demand["2040"]}</p><p class="intel-note">${intel.commodities?.supplyChain || ""}</p></div>`;
+  }
+  const li = intel.deposits?.lithiumIntelligence?.nearby?.slice(0, 3) || [];
+  if (li.length) {
+    html += `<div class="intel-card"><h4>🔋 Lithium KB</h4>`;
+    li.forEach((d) => { html += `<div class="intel-row">${d.name} · ${d.distanceKm} km</div>`; });
+    html += `</div>`;
+  }
+  const eonet = intel.nasa?.environmentalEvents?.events?.slice(0, 3) || [];
+  if (eonet.length) {
+    html += `<div class="intel-card"><h4>🛰️ NASA EONET</h4>`;
+    eonet.forEach((e) => { html += `<div class="intel-row">${e.title}</div>`; });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 async function runScan(withAi) {
   const aoi = currentAoi();
   if (Number.isNaN(aoi.lat) || Number.isNaN(aoi.lng)) {
@@ -309,6 +363,11 @@ async function runScan(withAi) {
     renderOverlays();
     renderTargets();
     renderResults(result, ai);
+    setStatus("Loading regional intelligence…", true);
+    const intel = await fetchIntelligence(aoi, $("commodity").value);
+    if (intel) {
+      $("results-body").insertAdjacentHTML("beforeend", renderIntelligence(intel));
+    }
     setStatus(`${result.targets.length} targets found`);
     setTimeout(() => setStatus(""), 3500);
   } catch (err) {

@@ -517,3 +517,10 @@
 .coverage-badge { font-size: 12px; color: var(--muted); margin-top: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(155,140,255,0.06); }
 
 .xray-toggle { border-color: rgba(255, 138, 61, 0.45); background: rgba(255, 138, 61, 0.08); }
+
+.intel-grid { display: grid; gap: 10px; margin-bottom: 16px; }
+.intel-card { background: rgba(10,16,28,0.6); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.intel-card h4 { margin: 0 0 6px; font-size: 13px; }
+.intel-card p { margin: 0 0 6px; font-size: 12px; color: var(--muted); }
+.intel-row { font-size: 11.5px; padding: 4px 0; border-top: 1px solid var(--border); color: var(--text); }
+.intel-note { font-size: 11px; color: var(--muted-2); margin-top: 6px; }

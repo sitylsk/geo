@@ -17,6 +17,7 @@ import {
   publicCoverage,
 } from "./lib/public.js";
 import { queryDeepScanCoverage, queryFullGeophysicalStack, listSources } from "./lib/satellite.js";
+import { gatherRegionalIntelligence, listIntegrations } from "./lib/integrations/index.js";
 import {
   fetchThermalContext,
   fetchMagneticContext,
@@ -41,7 +42,20 @@ api.get("/health", (_req, res) => {
 });
 
 api.get("/sources", (_req, res) => {
-  res.json({ ...listSources(), geophysical: GEOPHYSICAL_SOURCES });
+  res.json({ ...listSources(), geophysical: GEOPHYSICAL_SOURCES, integrations: listIntegrations() });
+});
+
+api.post("/intelligence", async (req, res) => {
+  try {
+    const { aoi, commodityId, radiusKm } = req.body || {};
+    if (!aoi || (typeof aoi.lat !== "number" && typeof aoi.minLat !== "number")) {
+      return res.status(400).json({ error: "aoi with lat/lng required" });
+    }
+    const intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm });
+    res.json(intel);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 api.get("/commodities", (_req, res) => {
