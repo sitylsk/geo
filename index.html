@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zambia Frontier Arsenopyrite-Gold Target Map</title>
+    <meta
+      name="description"
+      content="Interactive satellite map showing four supplied frontier arsenopyrite-gold target coordinates in Zambia."
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQ6BrQDA1Agui9PNsE4xyP5J+V/R2Y="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Target controls and descriptions">
+        <div class="brand">
+          <span class="brand__eyebrow">Zambia structural shadows</span>
+          <h1>Arsenopyrite-Gold Target Viewer</h1>
+          <p>
+            Satellite-first map of the four supplied frontier coordinates, with
+            color-coded target buffers and high-contrast layer options.
+          </p>
+        </div>
+
+        <div class="notice">
+          <strong>Data note:</strong> coordinates and geological descriptions
+          are user-supplied exploration hypotheses. Use this viewer for planning
+          and visualization, not as verified mineral-resource evidence.
+        </div>
+
+        <section class="control-panel" aria-labelledby="map-tools-heading">
+          <h2 id="map-tools-heading">Map tools</h2>
+          <div class="button-grid">
+            <button id="zoom-all" type="button">Show all Zambia targets</button>
+            <button id="toggle-fullscreen" type="button">Fullscreen map</button>
+            <button id="download-geojson" type="button">Download GeoJSON</button>
+          </div>
+          <label class="range-control" for="buffer-radius">
+            <span>Target circle radius: <strong id="radius-label">25 km</strong></span>
+            <input id="buffer-radius" type="range" min="5" max="75" value="25" step="5" />
+          </label>
+          <p class="hint">
+            Use the layer control on the map to switch between HD satellite,
+            labeled satellite, topographic, street, and dark contrast views.
+          </p>
+        </section>
+
+        <section class="target-list" aria-labelledby="targets-heading">
+          <h2 id="targets-heading">Targets</h2>
+          <div id="target-cards" class="cards"></div>
+        </section>
+      </aside>
+
+      <main class="map-wrap" aria-label="Interactive map">
+        <div class="map-toolbar">
+          <div>
+            <span class="status-dot"></span>
+            <strong>HD satellite mode ready</strong>
+          </div>
+          <span id="cursor-position">Move over map for coordinates</span>
+        </div>
+        <div id="map"></div>
+      </main>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="assets/app.js"></script>
+  </body>
+</html>
