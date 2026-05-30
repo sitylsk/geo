@@ -1,7 +1,4 @@
-// Dual-AI providers: Anthropic (Claude) + OpenAI (GPT).
-// Uses native fetch (Node >=18). Each provider degrades gracefully to a
-// deterministic heuristic narrative when its API key is absent, so the full
-// pipeline always returns a result.
+// Intelligence providers. Degrades gracefully when API keys are absent.
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
@@ -13,8 +10,6 @@ export function providerStatus() {
   return {
     anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
     openai: Boolean(process.env.OPENAI_API_KEY),
-    anthropicModel: ANTHROPIC_MODEL,
-    openaiModel: OPENAI_MODEL,
   };
 }
 
@@ -69,42 +64,27 @@ async function callOpenAI(system, user, { maxTokens = 1400 } = {}) {
   return data.choices?.[0]?.message?.content?.trim() || "";
 }
 
-// Provider wrappers with fallback flag.
 export async function analyzeAnthropic(system, user, opts) {
   try {
     const out = await callAnthropic(system, user, opts);
-    if (out) return { provider: "anthropic", model: ANTHROPIC_MODEL, simulated: false, text: out };
+    if (out) return { provider: "anthropic", simulated: false, text: out };
   } catch (err) {
-    return {
-      provider: "anthropic",
-      model: ANTHROPIC_MODEL,
-      simulated: true,
-      error: err.message,
-      text: heuristicNarrative("Claude", user),
-    };
+    return { provider: "anthropic", simulated: true, error: err.message, text: heuristicNarrative(user) };
   }
-  return { provider: "anthropic", model: ANTHROPIC_MODEL, simulated: true, text: heuristicNarrative("Claude", user) };
+  return { provider: "anthropic", simulated: true, text: heuristicNarrative(user) };
 }
 
 export async function analyzeOpenAI(system, user, opts) {
   try {
     const out = await callOpenAI(system, user, opts);
-    if (out) return { provider: "openai", model: OPENAI_MODEL, simulated: false, text: out };
+    if (out) return { provider: "openai", simulated: false, text: out };
   } catch (err) {
-    return {
-      provider: "openai",
-      model: OPENAI_MODEL,
-      simulated: true,
-      error: err.message,
-      text: heuristicNarrative("GPT", user),
-    };
+    return { provider: "openai", simulated: true, error: err.message, text: heuristicNarrative(user) };
   }
-  return { provider: "openai", model: OPENAI_MODEL, simulated: true, text: heuristicNarrative("GPT", user) };
+  return { provider: "openai", simulated: true, text: heuristicNarrative(user) };
 }
 
-// Deterministic narrative used when no API keys are configured. It reads the
-// embedded JSON evidence block so the offline output is still substantive.
-function heuristicNarrative(label, user) {
+function heuristicNarrative(user) {
   let evidence = {};
   const m = user.match(/```json\s*([\s\S]*?)```/);
   if (m) {
@@ -118,26 +98,19 @@ function heuristicNarrative(label, user) {
   const targets = evidence.targets || [];
   const top = targets[0] || {};
   const lines = [];
-  lines.push(`${label} prospectivity assessment for ${c.name || "the selected commodity"}.`);
-  lines.push("");
-  lines.push(
-    `Deposit model in play: ${c.depositModel || "structurally controlled mineralisation"}. The evidence stack was weighted across magnetics, gravity, radiometrics, geochemistry (${(c.pathfinders || []).join(", ")}), structure and spectral indices.`,
-  );
+  lines.push(`Intelligence brief for ${c.name || "the selected resource"}.`);
   lines.push("");
   lines.push("Ranked targets:");
   targets.slice(0, 5).forEach((t) => {
     lines.push(
-      `- ${t.id} (Tier ${t.tier}, ${(t.confidence * 100).toFixed(0)}% confidence) at ${t.lat}, ${t.lng}, ~${t.radiusKm} km halo. ${t.anomaly}. ${t.recommendedAction}`,
+      `- ${t.id} (Priority ${t.tier}, ${(t.confidence * 100).toFixed(0)}% confidence) at ${t.lat}, ${t.lng}. Recommended for field verification.`,
     );
   });
   lines.push("");
-  lines.push(
-    `Highest-ranked target ${top.id || "T-1"} shows coincident multi-layer agreement, the hallmark of a blind system where individual datasets were previously read in isolation. Spectral vectoring should use ${(c.spectral || []).map((s) => s.label).slice(0, 3).join("; ")}.`,
-  );
-  lines.push(`Surface cues to confirm on imagery: ${c.satelliteCues || "alteration halos and vegetation stress"}.`);
+  if (top.id) {
+    lines.push(`Highest-ranked target ${top.id} shows the strongest signal in this search area and should be investigated first.`);
+  }
   lines.push("");
-  lines.push(
-    "Risk note: signatures are model-derived prospectivity, not confirmed resource. Validate with ground geophysics, soil geochem and drilling before economic decisions.",
-  );
+  lines.push("Note: outputs are for exploration planning only. All targets require field validation before economic decisions.");
   return lines.join("\n");
 }

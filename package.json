@@ -1,7 +1,7 @@
 {
-  "name": "terrashed-explorer",
+  "name": "anthill",
   "version": "1.0.0",
-  "description": "AI-powered mineral, gemstone, energy and groundwater exploration intelligence platform with dual-AI (Anthropic + GPT) analysis and high-fidelity spectral target maps.",
+  "description": "Anthill — Advanced Neural Targeting & Hyper-spectral Intelligence for Land & Lithosphere. Discovery intelligence for minerals, gemstones, energy and water.",
   "type": "module",
   "main": "server/index.js",
   "scripts": {

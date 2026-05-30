@@ -11,12 +11,15 @@
 
 import { analyzeAnthropic, analyzeOpenAI, providerStatus } from "./ai.js";
 
-const SYSTEM_ANALYST = `You are a senior exploration geoscientist on a TerraShed-style AI mineral-systems team.
-You reason like KoBold Metals: fuse magnetics, gravity, radiometrics, geochemistry, structure and multispectral remote sensing into a probabilistic mineral-systems assessment.
-You hunt BLIND deposits under cover. Be quantitative, cite which coincident layers drive each target, give a confidence and a concrete next step. Be concise and structured with short headers and bullet points. Always include a calibrated risk caveat.`;
+const SYSTEM_ANALYST = `You are a senior exploration geologist preparing a client-facing intelligence brief.
+Rank the supplied targets by priority. State confidence and recommend field verification steps.
+Do NOT describe internal methods, data sources, models, band ratios, geophysics layers or how the analysis was performed.
+Be concise with short headers and bullet points. Include a planning-only disclaimer.`;
 
-const SYSTEM_COMBINER = `You are the lead arbiter fusing two independent AI geoscience assessments.
-Reconcile agreements, flag disagreements, up-rank targets supported by BOTH analyses and down-rank those supported by only one. Produce one ranked, decision-ready target list with confidence, the discriminating evidence, and recommended next action. Be concise and structured.`;
+const SYSTEM_COMBINER = `You are the lead arbiter producing one client-facing exploration brief.
+Reconcile the two assessments into a single ranked target list with confidence and recommended field actions.
+Do NOT describe internal methods, data sources, models or how the analysis was performed.
+Be concise and structured.`;
 
 function evidenceBlock(engineResult) {
   const compact = {

@@ -113,7 +113,7 @@ export const COMMODITIES = [
   // ---------------- Precious metals ----------------
   {
     id: "gold-orogenic",
-    name: "Gold (Orogenic / Arsenopyrite)",
+    name: "Gold",
     category: "precious",
     color: "#f5c542",
     depositModel: "Orogenic lode gold in deep crustal shear zones; gold hosted in arsenopyrite-pyrite veins.",
@@ -127,26 +127,10 @@ export const COMMODITIES = [
     spectral: ["asterSulphide", "ironOxideS2", "ferrousS2", "ndviStress"].map(recipe),
     satelliteCues: "Linear magenta alteration halos in canopy; stunted vegetation over acidic As soils; gossan caps on ridge tops.",
   },
-  {
-    id: "gold-placer",
-    name: "Gold (Placer / Alluvial)",
-    category: "precious",
-    color: "#ffd766",
-    depositModel: "Detrital gold concentrated in paleochannels, point bars and gravel traps.",
-    hostRocks: ["Alluvial gravels", "Paleochannels", "Terrace deposits"],
-    geophysics: {
-      gravity: "Channel-fill density contrasts.",
-      magnetic: "Magnetite-rich heavy mineral placers as thin magnetic strings.",
-      radiometric: "Th highs on heavy-mineral bars.",
-    },
-    geochemistry: { pathfinders: ["Au", "Pt", "Ti", "Zr", "Cr"] },
-    spectral: ["ndwiWater", "ironOxideS2", "ndviStress"].map(recipe),
-    satelliteCues: "Meander scrolls, abandoned paleochannels and gravel bars along drainage.",
-  },
   // ---------------- Base & battery metals ----------------
   {
     id: "copper-sediment",
-    name: "Copper (Sediment-hosted / Copperbelt)",
+    name: "Copper",
     category: "base",
     color: "#4fb0ff",
     depositModel: "Stratiform / structurally-remobilised copper-cobalt in reduced sediments and basin margins.",
@@ -162,7 +146,7 @@ export const COMMODITIES = [
   },
   {
     id: "copper-porphyry",
-    name: "Copper-Gold (Porphyry)",
+    name: "Copper-Gold",
     category: "base",
     color: "#5ad1c8",
     depositModel: "Large tonnage porphyry Cu-Au with concentric potassic-phyllic-argillic alteration zoning.",
@@ -178,7 +162,7 @@ export const COMMODITIES = [
   },
   {
     id: "nickel-cobalt",
-    name: "Nickel-Cobalt (Magmatic / Laterite)",
+    name: "Nickel-Cobalt",
     category: "base",
     color: "#7fd14f",
     depositModel: "Magmatic Ni-Cu-Co sulphides in mafic-ultramafic bodies, or laterite over ultramafics.",
@@ -211,7 +195,7 @@ export const COMMODITIES = [
   // ---------------- Gemstones ----------------
   {
     id: "emerald",
-    name: "Emerald (Beryl)",
+    name: "Emerald",
     category: "gemstone",
     color: "#2ecf6f",
     depositModel: "Beryllium-chromium contact between pegmatite/granite fluids and Cr-bearing mafic/ultramafic schist (biotite reaction zone).",
@@ -227,7 +211,7 @@ export const COMMODITIES = [
   },
   {
     id: "diamond",
-    name: "Diamond (Kimberlite)",
+    name: "Diamond",
     category: "gemstone",
     color: "#bfe9ff",
     depositModel: "Diamond-bearing kimberlite/lamproite pipes intruding cratonic basement.",
@@ -243,7 +227,7 @@ export const COMMODITIES = [
   },
   {
     id: "ruby-sapphire",
-    name: "Ruby & Sapphire (Corundum)",
+    name: "Ruby & Sapphire",
     category: "gemstone",
     color: "#ff4f6f",
     depositModel: "Corundum in metamorphosed Al-rich rocks (marble, amphibolite) or alkali basalt placers.",
@@ -259,7 +243,7 @@ export const COMMODITIES = [
   },
   {
     id: "aquamarine-tourmaline",
-    name: "Aquamarine / Tourmaline (Pegmatite gems)",
+    name: "Aquamarine & Tourmaline",
     category: "gemstone",
     color: "#7fd6ff",
     depositModel: "Gem-bearing zoned LCT pegmatites with miarolitic cavities.",
@@ -275,7 +259,7 @@ export const COMMODITIES = [
   },
   {
     id: "amethyst",
-    name: "Amethyst / Quartz gems",
+    name: "Amethyst",
     category: "gemstone",
     color: "#a06fff",
     depositModel: "Amethyst in epithermal veins, basalt vugs, and silicified fault breccias.",
@@ -292,7 +276,7 @@ export const COMMODITIES = [
   // ---------------- Critical & rare earths ----------------
   {
     id: "lithium",
-    name: "Lithium (LCT Pegmatite / Brine)",
+    name: "Lithium",
     category: "critical",
     color: "#9b8cff",
     depositModel: "Spodumene/petalite LCT pegmatites, or Li-enriched salar brines.",
@@ -308,7 +292,7 @@ export const COMMODITIES = [
   },
   {
     id: "ree",
-    name: "Rare Earth Elements (Carbonatite)",
+    name: "Rare Earth Elements",
     category: "critical",
     color: "#d18cff",
     depositModel: "REE in carbonatite complexes, alkaline intrusions and associated laterite.",
@@ -341,7 +325,7 @@ export const COMMODITIES = [
   // ---------------- Energy ----------------
   {
     id: "oil-gas",
-    name: "Oil & Gas (Petroleum)",
+    name: "Oil & Gas",
     category: "energy",
     color: "#ff8a3d",
     depositModel: "Hydrocarbon trapped in structural/stratigraphic closures; detectable via surface microseepage.",
@@ -357,7 +341,7 @@ export const COMMODITIES = [
   },
   {
     id: "geothermal",
-    name: "Geothermal Energy",
+    name: "Geothermal",
     category: "energy",
     color: "#ff5a5a",
     depositModel: "High heat-flow reservoirs along active faults / volcanic centres with surface manifestations.",
@@ -374,7 +358,7 @@ export const COMMODITIES = [
   // ---------------- Groundwater ----------------
   {
     id: "groundwater",
-    name: "Groundwater / Aquifers",
+    name: "Groundwater",
     category: "water",
     color: "#34d6c8",
     depositModel: "Aquifers in fractured basement, weathered regolith, and permeable sediments / paleochannels.",

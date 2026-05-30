@@ -10,6 +10,7 @@ import { listCommodities, CATEGORIES, getCommodity } from "./lib/commodities.js"
 import { runEngine, normaliseAoi } from "./lib/engine.js";
 import { runPipeline } from "./lib/pipeline.js";
 import { providerStatus } from "./lib/ai.js";
+import { publicCommodityList, publicEngineResult, publicAiResult } from "./lib/public.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -28,7 +29,7 @@ api.get("/health", (_req, res) => {
 });
 
 api.get("/commodities", (_req, res) => {
-  res.json({ categories: CATEGORIES, commodities: listCommodities() });
+  res.json(publicCommodityList(CATEGORIES, listCommodities()));
 });
 
 // Prospectivity scan: deterministic engine only (fast, no AI).
@@ -44,7 +45,7 @@ api.post("/scan", (req, res) => {
       gridSize: clampInt(gridSize, 16, 64, 36),
       maxTargets: clampInt(maxTargets, 1, 12, 6),
     });
-    res.json(result);
+    res.json(publicEngineResult(result));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -64,7 +65,7 @@ api.post("/analyze", async (req, res) => {
       maxTargets: clampInt(maxTargets, 1, 12, 6),
     });
     const ai = await runPipeline(engineResult, { aoiLabel });
-    res.json({ engine: engineResult, ai });
+    res.json({ engine: publicEngineResult(engineResult), ai: publicAiResult(ai) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -111,8 +112,8 @@ function clampInt(v, lo, hi, dflt) {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   const s = providerStatus();
-  console.log(`TerraShed Explorer running on http://localhost:${PORT}`);
-  console.log(`Providers -> Anthropic: ${s.anthropic ? "live" : "simulated"}, OpenAI: ${s.openai ? "live" : "simulated"}`);
+  console.log(`Anthill running on http://localhost:${PORT}`);
+  console.log(`Intelligence providers ready`);
 });
 
 export { app, normaliseAoi };
