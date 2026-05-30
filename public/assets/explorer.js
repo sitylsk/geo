@@ -7,7 +7,6 @@ const state = {
   lastResult: null,
   lastAi: null,
   heatOverlay: null,
-  subsurfaceOverlay: null,
   aoiRect: null,
   targetLayer: null,
 };
@@ -43,6 +42,15 @@ $("basemap").addEventListener("change", (e) => {
   activeBase = baseLayers[e.target.value].addTo(map);
   activeBase.bringToBack();
 });
+
+const LAYER_RAMPS = {
+  magnetic: [[8,12,28],[20,40,100],[60,100,200],[140,180,255],[220,230,255]],
+  gravity: [[12,10,8],[40,35,25],[80,65,45],[130,100,60],[200,170,100]],
+  geochem: [[10,20,8],[40,90,30],[120,180,50],[200,140,40],[255,220,80]],
+  thermal: [[8,8,40],[40,20,120],[180,40,40],[255,120,40],[255,220,120]],
+  moisture: [[20,30,60],[30,80,140],[40,160,200],[80,220,220],[200,255,255]],
+  xray: [[5,0,20],[40,0,80],[120,0,160],[220,60,40],[255,220,80]],
+};
 
 const SUBSURFACE_STOPS = [
   [10, 8, 32],
@@ -129,11 +137,33 @@ function drawAoiPreview() {
   state.aoiRect = L.rectangle(bounds, { color: "#34d6c8", weight: 1.5, dashArray: "6 6", fill: false }).addTo(map);
 }
 
+function getActiveGrid(result) {
+  const view = $("layer-view")?.value || "target";
+  if (view === "target") return { grid: result.grid, ramp: PROB_STOPS };
+  if (view === "subsurface" && result.subsurfaceGrid) return { grid: result.subsurfaceGrid, ramp: SUBSURFACE_STOPS };
+  const xs = result.xrayStack;
+  if (!xs?.active) return { grid: result.grid, ramp: PROB_STOPS };
+  const map = {
+    magnetic: xs.layers?.magnetic?.grid,
+    gravity: xs.layers?.gravity?.grid,
+    geochem: xs.layers?.geochem?.grid,
+    thermal: xs.layers?.thermal?.grid,
+    moisture: xs.layers?.moisture?.grid,
+    xray: xs.layers?.xray?.grid,
+    "depth-shallow": xs.depthSlices?.shallow?.grid,
+    "depth-mid": xs.depthSlices?.mid?.grid,
+    "depth-deep": xs.depthSlices?.deep?.grid,
+    "depth-basement": xs.depthSlices?.basement?.grid,
+  };
+  const layerKey = view.startsWith("depth-") ? view : view;
+  const grid = map[layerKey] || map[view.replace("depth-", "")] || result.grid;
+  const ramp = LAYER_RAMPS[view] || LAYER_RAMPS.xray || PROB_STOPS;
+  return { grid: grid || result.grid, ramp };
+}
+
 function clearOverlays() {
   if (state.heatOverlay) map.removeLayer(state.heatOverlay);
-  if (state.subsurfaceOverlay) map.removeLayer(state.subsurfaceOverlay);
   state.heatOverlay = null;
-  state.subsurfaceOverlay = null;
 }
 function renderOverlays() {
   const r = state.lastResult;
@@ -141,13 +171,10 @@ function renderOverlays() {
   const bounds = boundsToLatLng(r.bounds);
   const opacity = parseInt($("opacity").value, 10) / 100;
   clearOverlays();
-  if (r.subsurfaceGrid && $("toggle-subsurface").checked && !($("toggle-subsurface").disabled)) {
-    const url = gridToCanvas(r.subsurfaceGrid, (v) => ramp(SUBSURFACE_STOPS, v), 220, 380);
-    state.subsurfaceOverlay = L.imageOverlay(url, bounds, { opacity: opacity * 0.85, pane: "overlayPane2", interactive: false }).addTo(map);
-  }
   if ($("toggle-heat").checked) {
-    const url = gridToCanvas(r.grid, (v) => ramp(PROB_STOPS, v), 230, 380);
-    state.heatOverlay = L.imageOverlay(url, bounds, { opacity: r.subsurfaceGrid ? opacity * 0.55 : opacity, pane: "overlayPane2", interactive: false }).addTo(map);
+    const { grid, ramp: activeRamp } = getActiveGrid(r);
+    const url = gridToCanvas(grid, (v) => ramp(activeRamp, v), 230, 380);
+    state.heatOverlay = L.imageOverlay(url, bounds, { opacity, pane: "overlayPane2", interactive: false }).addTo(map);
   }
   $("legend").classList.toggle("hidden", !$("toggle-heat").checked);
 }
@@ -210,7 +237,9 @@ function renderResults(result, ai) {
     <div class="row"><span>Resource</span><b style="color:${c.color}">${c.name}</b></div>
     <div class="row"><span>Targets</span><b>${result.targets.length} (${tA} priority A)</b></div>
   </div>`;
-  if (result.deepScan?.active) {
+  if (result.xrayStack?.active) {
+    html += `<div class="coverage-badge">X-ray stack active — magnetics, gravity, geochem, thermal, L-band fused with depth slices</div>`;
+  } else if (result.deepScan?.active) {
     html += `<div class="coverage-badge">L-band deep scan · ${result.deepScan.palsarScenes} PALSAR scene(s) · ${result.deepScan.penetration}</div>`;
   }
 
@@ -252,7 +281,8 @@ async function runScan(withAi) {
     gridSize: parseInt($("grid").value, 10),
     maxTargets: parseInt($("maxTargets").value, 10),
     aoiLabel: `${aoi.lat.toFixed(3)}, ${aoi.lng.toFixed(3)}`,
-    deepScan: $("deep-scan").checked,
+    deepScan: $("deep-scan").checked || $("xray-scan").checked,
+    xrayScan: $("xray-scan").checked,
   };
   try {
     setStatus(withAi ? "Generating intelligence report…" : "Scanning…", true);
@@ -268,7 +298,7 @@ async function runScan(withAi) {
     state.lastResult = result;
     state.lastAi = ai;
     const subToggle = $("toggle-subsurface");
-    if (result.deepScan?.active && result.subsurfaceGrid) {
+    if (result.xrayStack?.active || (result.deepScan?.active && result.subsurfaceGrid)) {
       subToggle.disabled = false;
       subToggle.checked = true;
     } else if (!$("deep-scan").checked) {
@@ -294,6 +324,7 @@ $("deep-scan").addEventListener("change", () => {
   sub.disabled = !$("deep-scan").checked;
   if (!$("deep-scan").checked) sub.checked = false;
 });
+$("layer-view").addEventListener("change", renderOverlays);
 $("toggle-subsurface").addEventListener("change", renderOverlays);
 $("toggle-heat").addEventListener("change", renderOverlays);
 $("toggle-targets").addEventListener("change", renderTargets);

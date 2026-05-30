@@ -16,7 +16,13 @@ import {
   publicAiResult,
   publicCoverage,
 } from "./lib/public.js";
-import { queryDeepScanCoverage, listSources } from "./lib/satellite.js";
+import { queryDeepScanCoverage, queryFullGeophysicalStack, listSources } from "./lib/satellite.js";
+import {
+  fetchThermalContext,
+  fetchMagneticContext,
+  buildGravityGrid,
+  GEOPHYSICAL_SOURCES,
+} from "./lib/geophysical.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -35,7 +41,7 @@ api.get("/health", (_req, res) => {
 });
 
 api.get("/sources", (_req, res) => {
-  res.json(listSources());
+  res.json({ ...listSources(), geophysical: GEOPHYSICAL_SOURCES });
 });
 
 api.get("/commodities", (_req, res) => {
@@ -44,26 +50,48 @@ api.get("/commodities", (_req, res) => {
 
 api.post("/coverage", async (req, res) => {
   try {
-    const { aoi } = req.body || {};
+    const { aoi, xray } = req.body || {};
     const bounds = normaliseAoi(aoi);
-    const coverage = await queryDeepScanCoverage(bounds);
+    const coverage = xray ? await queryFullGeophysicalStack(bounds) : await queryDeepScanCoverage(bounds);
     res.json(publicCoverage(coverage));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+async function buildGeophysicalContext(bounds, gridSize, xrayScan) {
+  if (!xrayScan) return null;
+  const [stac, thermal] = await Promise.all([
+    queryFullGeophysicalStack(bounds),
+    fetchThermalContext(bounds),
+  ]);
+  const seed = stac.sceneSeed || 0;
+  const magnetic = fetchMagneticContext(bounds, gridSize);
+  const gravity = buildGravityGrid(bounds, gridSize, seed);
+  return { stac, thermal, magnetic, gravity };
+}
+
 async function runScanEngine(body) {
-  const { commodityId, aoi, gridSize, maxTargets, deepScan } = body || {};
+  const { commodityId, aoi, gridSize, maxTargets, deepScan, xrayScan } = body || {};
   const bounds = normaliseAoi(aoi);
-  const lbandContext = deepScan ? await queryDeepScanCoverage(bounds) : null;
+  const gs = clampInt(gridSize, 16, 64, 36);
+  const useXray = Boolean(xrayScan);
+  const useDeep = Boolean(deepScan) || useXray;
+
+  const [lbandContext, geophysicalContext] = await Promise.all([
+    useDeep ? queryFullGeophysicalStack(bounds) : null,
+    buildGeophysicalContext(bounds, gs, useXray),
+  ]);
+
   return runEngine({
     commodityId,
     aoi,
-    gridSize: clampInt(gridSize, 16, 64, 36),
+    gridSize: gs,
     maxTargets: clampInt(maxTargets, 1, 12, 6),
-    deepScan: Boolean(deepScan),
-    lbandContext,
+    deepScan: useDeep,
+    xrayScan: useXray,
+    lbandContext: lbandContext || null,
+    geophysicalContext,
   });
 }
 
@@ -109,8 +137,7 @@ api.post("/contact", (req, res) => {
     receivedAt: new Date().toISOString(),
   };
   try {
-    const file = path.join(dataDir, "leads.jsonl");
-    fs.appendFileSync(file, JSON.stringify(lead) + "\n");
+    fs.appendFileSync(path.join(dataDir, "leads.jsonl"), JSON.stringify(lead) + "\n");
   } catch {
     /* non-fatal */
   }
@@ -118,7 +145,6 @@ api.post("/contact", (req, res) => {
 });
 
 app.use("/api", api);
-
 app.use(express.static(publicDir, { extensions: ["html"] }));
 app.get("*", (_req, res) => {
   res.sendFile(path.join(publicDir, "index.html"));
@@ -133,7 +159,7 @@ function clampInt(v, lo, hi, dflt) {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Anthill running on http://localhost:${PORT}`);
-  console.log(`L-band deep scan via ALOS PALSAR (Planetary Computer STAC)`);
+  console.log(`Satellite stack: L-band PALSAR + WMM magnetics + NASA POWER thermal + X-ray fusion`);
 });
 
 export { app, normaliseAoi };

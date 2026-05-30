@@ -8,6 +8,7 @@
 
 import { getCommodity } from "./commodities.js";
 import { buildSubsurfaceGrid, penetrationDepthLabel } from "./lband.js";
+import { buildGeophysicalStack } from "./geophysical.js";
 
 // Small seeded PRNG (mulberry32) so a given AOI+commodity always yields the
 // same prospectivity map.
@@ -81,7 +82,7 @@ function fieldValue(rng, nx, ny, octaves = 3) {
   return (v / total) * 0.5 + 0.5; // 0..1
 }
 
-export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, deepScan = false, lbandContext = null }) {
+export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, deepScan = false, xrayScan = false, lbandContext = null, geophysicalContext = null }) {
   const commodity = getCommodity(commodityId);
   if (!commodity) throw new Error(`Unknown commodity: ${commodityId}`);
   const bounds = normaliseAoi(aoi);
@@ -91,7 +92,8 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
   const rng = makeRng(seed);
 
   // Independent random fields representing each evidence layer.
-  const layers = deepScan
+  const useDeep = deepScan || xrayScan;
+  const layers = useDeep
     ? {
         magnetic: { rng: makeRng(seed ^ 0x9e3779b1), weight: 0.16 },
         gravity: { rng: makeRng(seed ^ 0x85ebca6b), weight: 0.14 },
@@ -172,12 +174,32 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
   }
 
   let subsurfaceGrid = null;
-  if (deepScan) {
+  if (useDeep) {
     subsurfaceGrid = buildSubsurfaceGrid(gridSize, seed, lbandContext);
     // Blend subsurface signal into main grid (L-band boosts blind-under-cover targets)
     for (let j = 0; j < gridSize; j++) {
       for (let i = 0; i < gridSize; i++) {
         grid[j][i] = Number(clamp(grid[j][i] * 0.72 + subsurfaceGrid[j][i] * 0.28, 0, 1).toFixed(4));
+      }
+    }
+  }
+
+    let geophysicalStack = null;
+  if (xrayScan && subsurfaceGrid) {
+    geophysicalStack = buildGeophysicalStack({
+      gridSize,
+      seed,
+      bounds,
+      thermalContext: geophysicalContext?.thermal,
+      stacContext: geophysicalContext?.stac,
+      subsurfaceGrid,
+      magneticContext: geophysicalContext?.magnetic,
+      gravityContext: geophysicalContext?.gravity,
+    });
+    const xg = geophysicalStack.layers.xray.grid;
+    for (let j = 0; j < gridSize; j++) {
+      for (let i = 0; i < gridSize; i++) {
+        grid[j][i] = Number(clamp(grid[j][i] * 0.45 + xg[j][i] * 0.55, 0, 1).toFixed(4));
       }
     }
   }
@@ -247,15 +269,18 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
   });
 
   return {
-    deepScan: deepScan
+    deepScan: useDeep
       ? {
           active: true,
           penetration: penetrationDepthLabel(lbandContext),
           palsarScenes: lbandContext?.palsar?.scenes ?? 0,
           lbandCoverage: Boolean(lbandContext?.palsar?.covered),
+          xray: Boolean(xrayScan),
         }
       : { active: false },
     subsurfaceGrid,
+    geophysicalStack,
+    xrayScan: Boolean(xrayScan),
     commodity: {
       id: commodity.id,
       name: commodity.name,

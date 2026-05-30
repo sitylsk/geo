@@ -116,3 +116,25 @@ function hashScenes(items) {
 export function listSources() {
   return DATA_SOURCES;
 }
+
+const EXTRA_COLLECTIONS = [
+  { key: "modisLst", collection: "modis-11A1-061", label: "MODIS LST" },
+  { key: "aster", collection: "aster-l1t", label: "ASTER" },
+  { key: "landsat", collection: "landsat-c2-l2", label: "Landsat" },
+  { key: "gnatsgo", collection: "gnatsgo-rasters", label: "gNATSGO soils" },
+  { key: "gpm", collection: "gpm-imerg-hhr", label: "GPM precipitation" },
+  { key: "sentinel3Lst", collection: "sentinel-3-slstr-lst-l2-netcdf", label: "Sentinel-3 LST" },
+];
+
+export async function queryFullGeophysicalStack(bounds) {
+  const lband = await queryDeepScanCoverage(bounds);
+  const bbox = bboxFromBounds(bounds);
+  const extras = {};
+  for (const { key, collection, label } of EXTRA_COLLECTIONS) {
+    const r = await stacSearch(collection, bbox, 10);
+    extras[key] = { label, scenes: r.count, covered: r.count > 0 };
+  }
+  const sceneSeed = (lband.sceneSeed ^ hashScenes(Object.entries(extras).map(([k, v]) => ({ id: k + v.scenes })))) >>> 0;
+  return { ...lband, extras, sceneSeed, stackNote: "Full satellite geophysics stack queried." };
+}
+

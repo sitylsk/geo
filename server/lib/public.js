@@ -17,6 +17,11 @@ export function publicCommodityList(categories, commodities) {
   };
 }
 
+function publicLayerGrid(layer) {
+  if (!layer?.grid) return null;
+  return { grid: layer.grid };
+}
+
 export function publicEngineResult(result) {
   const out = {
     commodity: publicCommodity(result.commodity),
@@ -34,15 +39,31 @@ export function publicEngineResult(result) {
     })),
     generatedAt: result.generatedAt,
   };
+
   if (result.deepScan?.active) {
     out.deepScan = {
       active: true,
       penetration: result.deepScan.penetration,
       lbandCoverage: result.deepScan.lbandCoverage,
       palsarScenes: result.deepScan.palsarScenes,
+      xray: Boolean(result.deepScan.xray),
     };
     if (result.subsurfaceGrid) out.subsurfaceGrid = result.subsurfaceGrid;
   }
+
+  if (result.xrayScan && result.geophysicalStack) {
+    const gs = result.geophysicalStack;
+    out.xrayStack = {
+      active: true,
+      layers: Object.fromEntries(
+        Object.entries(gs.layers).map(([k, v]) => [k, publicLayerGrid(v)]),
+      ),
+      depthSlices: Object.fromEntries(
+        Object.entries(gs.depthSlices || {}).map(([k, v]) => [k, { label: v.label, grid: v.grid }]),
+      ),
+    };
+  }
+
   return out;
 }
 
@@ -60,6 +81,7 @@ export function publicCoverage(coverage) {
       scenes: coverage.palsar.scenes,
       covered: coverage.palsar.covered,
     },
-    note: coverage.penetrationNote,
+    extras: coverage.extras || null,
+    note: coverage.penetrationNote || coverage.stackNote,
   };
 }
