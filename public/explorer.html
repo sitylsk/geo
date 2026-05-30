@@ -74,6 +74,8 @@
 
         <div class="hint">Click anywhere on the map to set your search centre.</div>
 
+        <label class="switch deep-scan-toggle"><span>Deep ground scan <small>(L-band SAR)</small></span><input id="deep-scan" type="checkbox" /></label>
+
         <div class="btn-stack">
           <button id="scan-btn" class="btn btn-primary btn-lg">Run scan</button>
           <button id="analyze-btn" class="btn btn-accent btn-lg">Generate intelligence report</button>
@@ -81,6 +83,7 @@
 
         <div class="layer-controls">
           <div class="lc-head">Map layers</div>
+          <label class="switch"><span>Subsurface scan map</span><input id="toggle-subsurface" type="checkbox" checked disabled /></label>
           <label class="switch"><span>Target colour map</span><input id="toggle-heat" type="checkbox" checked /></label>
           <label class="switch"><span>Circled targets</span><input id="toggle-targets" type="checkbox" checked /></label>
           <label class="field">

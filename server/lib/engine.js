@@ -7,6 +7,7 @@
 // and the app works end-to-end with no external data dependency.
 
 import { getCommodity } from "./commodities.js";
+import { buildSubsurfaceGrid, penetrationDepthLabel } from "./lband.js";
 
 // Small seeded PRNG (mulberry32) so a given AOI+commodity always yields the
 // same prospectivity map.
@@ -80,7 +81,7 @@ function fieldValue(rng, nx, ny, octaves = 3) {
   return (v / total) * 0.5 + 0.5; // 0..1
 }
 
-export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6 }) {
+export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, deepScan = false, lbandContext = null }) {
   const commodity = getCommodity(commodityId);
   if (!commodity) throw new Error(`Unknown commodity: ${commodityId}`);
   const bounds = normaliseAoi(aoi);
@@ -90,14 +91,25 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6 }) {
   const rng = makeRng(seed);
 
   // Independent random fields representing each evidence layer.
-  const layers = {
-    magnetic: { rng: makeRng(seed ^ 0x9e3779b1), weight: 0.22 },
-    gravity: { rng: makeRng(seed ^ 0x85ebca6b), weight: 0.18 },
-    radiometric: { rng: makeRng(seed ^ 0xc2b2ae35), weight: 0.14 },
-    geochem: { rng: makeRng(seed ^ 0x27d4eb2f), weight: 0.24 },
-    structure: { rng: makeRng(seed ^ 0x165667b1), weight: 0.12 },
-    spectral: { rng: makeRng(seed ^ 0xd3a2646c), weight: 0.10 },
-  };
+  const layers = deepScan
+    ? {
+        magnetic: { rng: makeRng(seed ^ 0x9e3779b1), weight: 0.16 },
+        gravity: { rng: makeRng(seed ^ 0x85ebca6b), weight: 0.14 },
+        radiometric: { rng: makeRng(seed ^ 0xc2b2ae35), weight: 0.10 },
+        geochem: { rng: makeRng(seed ^ 0x27d4eb2f), weight: 0.18 },
+        structure: { rng: makeRng(seed ^ 0x165667b1), weight: 0.10 },
+        spectral: { rng: makeRng(seed ^ 0xd3a2646c), weight: 0.08 },
+        lband: { rng: makeRng(seed ^ 0x7f4a7c15), weight: 0.14 },
+        subsurface: { rng: makeRng(seed ^ 0x6a09e667), weight: 0.10 },
+      }
+    : {
+        magnetic: { rng: makeRng(seed ^ 0x9e3779b1), weight: 0.22 },
+        gravity: { rng: makeRng(seed ^ 0x85ebca6b), weight: 0.18 },
+        radiometric: { rng: makeRng(seed ^ 0xc2b2ae35), weight: 0.14 },
+        geochem: { rng: makeRng(seed ^ 0x27d4eb2f), weight: 0.24 },
+        structure: { rng: makeRng(seed ^ 0x165667b1), weight: 0.12 },
+        spectral: { rng: makeRng(seed ^ 0xd3a2646c), weight: 0.10 },
+      };
 
   // Precompute phase tables per layer so fieldValue is smooth across the grid.
   const phaseTables = {};
@@ -159,7 +171,18 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6 }) {
     }
   }
 
-  // Find local maxima as targets.
+  let subsurfaceGrid = null;
+  if (deepScan) {
+    subsurfaceGrid = buildSubsurfaceGrid(gridSize, seed, lbandContext);
+    // Blend subsurface signal into main grid (L-band boosts blind-under-cover targets)
+    for (let j = 0; j < gridSize; j++) {
+      for (let i = 0; i < gridSize; i++) {
+        grid[j][i] = Number(clamp(grid[j][i] * 0.72 + subsurfaceGrid[j][i] * 0.28, 0, 1).toFixed(4));
+      }
+    }
+  }
+
+    // Find local maxima as targets.
   const candidates = [];
   for (let j = 1; j < gridSize - 1; j++) {
     for (let i = 1; i < gridSize - 1; i++) {
@@ -224,6 +247,15 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6 }) {
   });
 
   return {
+    deepScan: deepScan
+      ? {
+          active: true,
+          penetration: penetrationDepthLabel(lbandContext),
+          palsarScenes: lbandContext?.palsar?.scenes ?? 0,
+          lbandCoverage: Boolean(lbandContext?.palsar?.covered),
+        }
+      : { active: false },
+    subsurfaceGrid,
     commodity: {
       id: commodity.id,
       name: commodity.name,

@@ -18,7 +18,7 @@ export function publicCommodityList(categories, commodities) {
 }
 
 export function publicEngineResult(result) {
-  return {
+  const out = {
     commodity: publicCommodity(result.commodity),
     bounds: result.bounds,
     gridSize: result.gridSize,
@@ -34,9 +34,32 @@ export function publicEngineResult(result) {
     })),
     generatedAt: result.generatedAt,
   };
+  if (result.deepScan?.active) {
+    out.deepScan = {
+      active: true,
+      penetration: result.deepScan.penetration,
+      lbandCoverage: result.deepScan.lbandCoverage,
+      palsarScenes: result.deepScan.palsarScenes,
+    };
+    if (result.subsurfaceGrid) out.subsurfaceGrid = result.subsurfaceGrid;
+  }
+  return out;
 }
 
 export function publicAiResult(ai) {
   if (!ai) return null;
   return { summary: ai.final };
+}
+
+export function publicCoverage(coverage) {
+  if (!coverage) return null;
+  return {
+    palsar: {
+      sensor: coverage.palsar.sensor,
+      band: coverage.palsar.band,
+      scenes: coverage.palsar.scenes,
+      covered: coverage.palsar.covered,
+    },
+    note: coverage.penetrationNote,
+  };
 }

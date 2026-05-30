@@ -7,6 +7,7 @@ const state = {
   lastResult: null,
   lastAi: null,
   heatOverlay: null,
+  subsurfaceOverlay: null,
   aoiRect: null,
   targetLayer: null,
 };
@@ -42,6 +43,14 @@ $("basemap").addEventListener("change", (e) => {
   activeBase = baseLayers[e.target.value].addTo(map);
   activeBase.bringToBack();
 });
+
+const SUBSURFACE_STOPS = [
+  [10, 8, 32],
+  [42, 24, 96],
+  [106, 58, 209],
+  [176, 111, 255],
+  [232, 208, 255],
+];
 
 const PROB_STOPS = [
   [11, 29, 58],
@@ -122,7 +131,9 @@ function drawAoiPreview() {
 
 function clearOverlays() {
   if (state.heatOverlay) map.removeLayer(state.heatOverlay);
+  if (state.subsurfaceOverlay) map.removeLayer(state.subsurfaceOverlay);
   state.heatOverlay = null;
+  state.subsurfaceOverlay = null;
 }
 function renderOverlays() {
   const r = state.lastResult;
@@ -130,9 +141,13 @@ function renderOverlays() {
   const bounds = boundsToLatLng(r.bounds);
   const opacity = parseInt($("opacity").value, 10) / 100;
   clearOverlays();
+  if (r.subsurfaceGrid && $("toggle-subsurface").checked && !($("toggle-subsurface").disabled)) {
+    const url = gridToCanvas(r.subsurfaceGrid, (v) => ramp(SUBSURFACE_STOPS, v), 220, 380);
+    state.subsurfaceOverlay = L.imageOverlay(url, bounds, { opacity: opacity * 0.85, pane: "overlayPane2", interactive: false }).addTo(map);
+  }
   if ($("toggle-heat").checked) {
     const url = gridToCanvas(r.grid, (v) => ramp(PROB_STOPS, v), 230, 380);
-    state.heatOverlay = L.imageOverlay(url, bounds, { opacity, pane: "overlayPane2", interactive: false }).addTo(map);
+    state.heatOverlay = L.imageOverlay(url, bounds, { opacity: r.subsurfaceGrid ? opacity * 0.55 : opacity, pane: "overlayPane2", interactive: false }).addTo(map);
   }
   $("legend").classList.toggle("hidden", !$("toggle-heat").checked);
 }
@@ -195,6 +210,9 @@ function renderResults(result, ai) {
     <div class="row"><span>Resource</span><b style="color:${c.color}">${c.name}</b></div>
     <div class="row"><span>Targets</span><b>${result.targets.length} (${tA} priority A)</b></div>
   </div>`;
+  if (result.deepScan?.active) {
+    html += `<div class="coverage-badge">L-band deep scan · ${result.deepScan.palsarScenes} PALSAR scene(s) · ${result.deepScan.penetration}</div>`;
+  }
 
   html += `<div class="section-label">Ranked targets</div>`;
   result.targets.forEach((t) => {
@@ -234,6 +252,7 @@ async function runScan(withAi) {
     gridSize: parseInt($("grid").value, 10),
     maxTargets: parseInt($("maxTargets").value, 10),
     aoiLabel: `${aoi.lat.toFixed(3)}, ${aoi.lng.toFixed(3)}`,
+    deepScan: $("deep-scan").checked,
   };
   try {
     setStatus(withAi ? "Generating intelligence report…" : "Scanning…", true);
@@ -248,6 +267,14 @@ async function runScan(withAi) {
     const ai = withAi ? data.ai : null;
     state.lastResult = result;
     state.lastAi = ai;
+    const subToggle = $("toggle-subsurface");
+    if (result.deepScan?.active && result.subsurfaceGrid) {
+      subToggle.disabled = false;
+      subToggle.checked = true;
+    } else if (!$("deep-scan").checked) {
+      subToggle.disabled = true;
+      subToggle.checked = false;
+    }
     map.fitBounds(boundsToLatLng(result.bounds), { padding: [40, 40] });
     renderOverlays();
     renderTargets();
@@ -262,6 +289,12 @@ async function runScan(withAi) {
 $("scan-btn").addEventListener("click", () => runScan(false));
 $("analyze-btn").addEventListener("click", () => runScan(true));
 
+$("deep-scan").addEventListener("change", () => {
+  const sub = $("toggle-subsurface");
+  sub.disabled = !$("deep-scan").checked;
+  if (!$("deep-scan").checked) sub.checked = false;
+});
+$("toggle-subsurface").addEventListener("change", renderOverlays);
 $("toggle-heat").addEventListener("change", renderOverlays);
 $("toggle-targets").addEventListener("change", renderTargets);
 $("opacity").addEventListener("input", () => {
