@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>3D Depth Viewer - Anthill</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <style>
+      body { overflow: hidden; }
+      #c { position: fixed; inset: 0; }
+      .v-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 10; }
+      .v-panel {
+        position: fixed; top: 80px; left: 16px; z-index: 10; width: 300px;
+        background: rgba(10,16,28,0.88); border: 1px solid var(--border-strong);
+        border-radius: 14px; padding: 16px; backdrop-filter: blur(10px);
+      }
+      .v-panel h2 { margin: 0 0 4px; font-size: 16px; }
+      .v-panel .sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+      .v-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+      .v-row span { color: var(--muted); }
+      .v-legend { margin-top: 12px; }
+      .v-legend .bar { height: 10px; border-radius: 5px; background: linear-gradient(90deg,#0b1d3a,#1f6fb2,#2ecf6f,#f5c542,#ff8a3d,#ff2e63); }
+      .v-legend .sc { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-top: 3px; }
+      .v-slices { margin-top: 12px; }
+      .v-slice { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
+      .v-slice input { accent-color: var(--brand); }
+      .v-hint { font-size: 11px; color: var(--muted-2); margin-top: 12px; }
+      .v-empty { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; }
+      .btn-back { position: fixed; top: 16px; right: 16px; z-index: 11; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <a class="btn btn-ghost btn-back" href="/explorer">Back to Explorer</a>
+
+    <div class="v-panel" id="panel">
+      <h2 id="v-title">3D Depth Model</h2>
+      <div class="sub" id="v-sub">Loading...</div>
+      <div id="v-stats"></div>
+      <div class="v-legend"><div class="bar"></div><div class="sc"><span>Low</span><span>Discovery probability</span><span>High</span></div></div>
+      <div class="v-slices" id="v-slices"></div>
+      <div class="v-hint">Drag to orbit, scroll to zoom. Each plane is a depth shell; colour is prospectivity. Markers are ranked targets placed at estimated source depth.</div>
+    </div>
+
+    <div class="v-empty hidden" id="empty">
+      <div>
+        <h2>No scan loaded</h2>
+        <p class="lead">Run an X-ray subsurface scan in the Explorer, then open the 3D viewer.</p>
+        <a class="btn btn-primary" href="/explorer">Go to Explorer</a>
+      </div>
+    </div>
+
+    <script type="importmap">
+      { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+    <script type="module" src="/assets/viewer3d.js"></script>
+  </body>
+</html>

@@ -241,6 +241,7 @@ function renderResults(result, ai) {
   </div>`;
   if (result.xrayStack?.active) {
     html += `<div class="coverage-badge">X-ray stack active - magnetics, gravity, geochem, thermal, L-band fused with depth slices</div>`;
+    html += `<button id="open-3d" class="btn btn-primary" style="width:100%;margin:6px 0 10px">Open 3D depth viewer</button>`;
   } else if (result.deepScan?.active) {
     html += `<div class="coverage-badge">L-band deep scan · ${result.deepScan.palsarScenes} PALSAR scene(s) · ${result.deepScan.penetration}</div>`;
   }
@@ -297,6 +298,13 @@ function renderResults(result, ai) {
       map.flyTo([parseFloat(el.dataset.lat), parseFloat(el.dataset.lng)], 12, { duration: 0.8 });
     });
   });
+  const open3d = $("open-3d");
+  if (open3d) {
+    open3d.addEventListener("click", () => {
+      try { sessionStorage.setItem("anthill_result", JSON.stringify(result)); } catch (e) { /* too big */ }
+      window.open("/viewer3d", "_blank");
+    });
+  }
 }
 
 function renderBrief(md) {

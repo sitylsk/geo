@@ -14,7 +14,7 @@
 
 import { fetchGeologyGrid, geologyFavorability } from "./integrations/geology.js";
 import { drillFeedbackForBounds } from "./drill.js";
-import { fetchAlteration } from "./raster.js";
+import { fetchAlteration, fetchPotentialField } from "./raster.js";
 
 const ELEVATION_URL = "https://api.open-meteo.com/v1/elevation";
 
@@ -128,10 +128,11 @@ function proximityGrid(bounds, n, points, decayKm) {
  */
 export async function buildSharedContext({ bounds, gridSize, intel }) {
   const coarse = Math.min(gridSize, 16);
-  const [elev, geology, alteration] = await Promise.all([
+  const [elev, geology, alteration, magnetics] = await Promise.all([
     fetchElevationGrid(bounds, coarse),
     fetchGeologyGrid(bounds, 3).catch(() => null),
     fetchAlteration(bounds, coarse).catch(() => null),
+    fetchPotentialField(bounds, coarse).catch(() => null),
   ]);
   const rug = ruggednessGrid(elev, coarse);
 
@@ -162,6 +163,7 @@ export async function buildSharedContext({ bounds, gridSize, intel }) {
     drill,
     geology,
     alteration: alteration && alteration.available ? alteration : null,
+    magnetics: magnetics && magnetics.available ? magnetics : null,
     dataConfidence: {
       dem: rug.hasData,
       knownDeposits: depositProx.hasData ? deposits.length : 0,
@@ -171,6 +173,7 @@ export async function buildSharedContext({ bounds, gridSize, intel }) {
       drillHits: drill.hits.length,
       drillMisses: drill.misses.length,
       alteration: alteration && alteration.available ? (alteration.scene || true) : 0,
+      magnetics: magnetics && magnetics.available ? (magnetics.source || true) : 0,
     },
   };
 }
@@ -179,6 +182,7 @@ export async function buildSharedContext({ bounds, gridSize, intel }) {
 export function scoreFromContext(ctx, commodityId, weights) {
   const { coarse, rug, depositProx, seismicProx, tectonicScore } = ctx;
   const altGrid = ctx.alteration?.alterationGrid || null;
+  const magGrid = ctx.magnetics?.magneticsGrid || null;
   const w = weights || defaultWeights(commodityId);
   const geoFav = geologyFavorability(commodityId, ctx.geology);
   const score = Array.from({ length: coarse }, () => new Array(coarse).fill(0));
@@ -189,13 +193,15 @@ export function scoreFromContext(ctx, commodityId, weights) {
       const depV = depositProx.hasData ? depositProx.grid[j][i] : 0;
       const seisV = seismicProx.hasData ? seismicProx.grid[j][i] : 0.3;
       const altV = altGrid && altGrid[j] && typeof altGrid[j][i] === "number" ? altGrid[j][i] : null;
+      const magV = magGrid && magGrid[j] && typeof magGrid[j][i] === "number" ? magGrid[j][i] : null;
       let cell =
         rugV * w.structure +
         depV * w.deposits +
         seisV * w.seismic +
         tectonicScore * w.tectonic +
         geoFav.score * w.geology +
-        (altV != null ? altV * w.alteration : 0);
+        (altV != null ? altV * w.alteration : 0) +
+        (magV != null ? magV * w.magnetics : 0);
       // Drill misses damp their immediate surroundings (informative negatives).
       const miss = ctx.missProx?.hasData ? ctx.missProx.grid[j][i] : 0;
       cell *= 1 - 0.5 * miss;
@@ -209,6 +215,7 @@ export function scoreFromContext(ctx, commodityId, weights) {
     tectonicScore,
     geologyFavorability: geoFav,
     alteration: ctx.alteration ? { scene: ctx.alteration.scene, cloud: ctx.alteration.cloud, source: ctx.alteration.source } : null,
+    magnetics: ctx.magnetics ? { source: ctx.magnetics.source, stats: ctx.magnetics.stats, depthToSource: ctx.magnetics.depthToSource } : null,
     dataConfidence: ctx.dataConfidence,
     weights: w,
   };
@@ -224,11 +231,11 @@ export async function buildRealProspectivity({ bounds, gridSize, commodityId, in
 
 function defaultWeights(commodityId) {
   // Structure + real host-rock geology + deposit nearology + alteration drive the score.
-  const base = { structure: 0.2, deposits: 0.28, seismic: 0.1, tectonic: 0.1, geology: 0.2, alteration: 0.12 };
-  if (commodityId === "diamond") return { structure: 0.18, deposits: 0.26, seismic: 0.06, tectonic: 0.22, geology: 0.18, alteration: 0.1 };
-  if (commodityId === "geothermal") return { structure: 0.18, deposits: 0.14, seismic: 0.24, tectonic: 0.14, geology: 0.18, alteration: 0.12 };
-  if (commodityId === "ree") return { structure: 0.14, deposits: 0.26, seismic: 0.1, tectonic: 0.22, geology: 0.18, alteration: 0.1 };
-  if (commodityId === "groundwater") return { structure: 0.34, deposits: 0.08, seismic: 0.14, tectonic: 0.18, geology: 0.18, alteration: 0.08 };
+  const base = { structure: 0.18, deposits: 0.24, seismic: 0.08, tectonic: 0.1, geology: 0.18, alteration: 0.1, magnetics: 0.12 };
+  if (commodityId === "diamond") return { structure: 0.16, deposits: 0.22, seismic: 0.05, tectonic: 0.2, geology: 0.16, alteration: 0.08, magnetics: 0.13 };
+  if (commodityId === "geothermal") return { structure: 0.16, deposits: 0.12, seismic: 0.22, tectonic: 0.12, geology: 0.16, alteration: 0.12, magnetics: 0.1 };
+  if (commodityId === "ree") return { structure: 0.12, deposits: 0.22, seismic: 0.08, tectonic: 0.2, geology: 0.16, alteration: 0.08, magnetics: 0.14 };
+  if (commodityId === "groundwater") return { structure: 0.32, deposits: 0.08, seismic: 0.12, tectonic: 0.16, geology: 0.16, alteration: 0.08, magnetics: 0.08 };
   return base;
 }
 

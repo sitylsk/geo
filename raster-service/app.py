@@ -194,6 +194,106 @@ def _norm_list(a, size=48):
     return np.round(np.clip((a - lo) / (hi - lo), 0, 1), 4).tolist()
 
 
+# ---------- Real global magnetic anomaly (EMAG2v3) ----------
+
+import os as _os
+_os.environ.setdefault("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
+_os.environ.setdefault("CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".tif")
+
+EMAG2_URL = _os.environ.get(
+    "EMAG2_URL",
+    "/vsicurl/https://www.ngdc.noaa.gov/geomag/data/EMAG2/EMAG2_V3_20170530/EMAG2_V3_20170530_UpCont.tif",
+)
+GRAVITY_URL = _os.environ.get("GRAVITY_URL", "")
+
+
+def _read_global_grid(url, bbox, size, lon_0_360=False):
+    minlng, minlat, maxlng, maxlat = bbox
+    if lon_0_360:
+        minlng = minlng % 360
+        maxlng = maxlng % 360
+        if minlng > maxlng:
+            minlng, maxlng = maxlng, minlng
+    with rasterio.open(url) as src:
+        win = from_bounds(minlng, minlat, maxlng, maxlat, transform=src.transform)
+        arr = src.read(1, window=win, out_shape=(size, size), boundless=True, fill_value=np.nan).astype("float64")
+        nod = src.nodata
+    if nod is not None:
+        arr = np.where(arr == nod, np.nan, arr)
+    arr = np.where(np.abs(arr) >= 99999, np.nan, arr)
+    return arr
+
+
+def spi_depth(field, cellsize_km):
+    """Source Parameter Imaging: depth-to-source from local wavenumber of the
+    analytic signal (Thurston and Smith). Returns a depth grid in km."""
+    derivs = potential_field_derivatives(field)
+    analytic = derivs["analytic_signal"]
+    gx, gy = _grad(analytic)
+    k = np.sqrt(gx**2 + gy**2) / (np.abs(analytic) + 1e-9)
+    depth_cells = 1.0 / (k + 1e-6)
+    depth_km = np.clip(depth_cells * cellsize_km, 0, 25)
+    return depth_km, derivs
+
+
+@app.post("/potential-field")
+def potential_field(req: BandRatioReq):
+    """Real magnetic anomaly (EMAG2v3) for an AOI, plus derivatives and an SPI depth-to-source estimate."""
+    bbox = req.bbox
+    if len(bbox) != 4:
+        raise HTTPException(400, "bbox must be [minlng, minlat, maxlng, maxlat]")
+    size = max(16, min(64, req.size))
+    try:
+        arr = _read_global_grid(EMAG2_URL, bbox, size, lon_0_360=True)
+        if not np.isfinite(arr).any():
+            return {"available": False, "reason": "No EMAG2 coverage for this AOI."}
+        arr = np.where(np.isfinite(arr), arr, np.nanmean(arr[np.isfinite(arr)]))
+        cell_km = abs(bbox[3] - bbox[1]) / size * 111.0
+        depth_km, derivs = spi_depth(arr, cell_km)
+        out = {
+            "available": True,
+            "source": "EMAG2v3 (NOAA NCEI) upward-continued 4 km",
+            "field_type": "magnetic",
+            "unit": "nT anomaly",
+            "size": size,
+            "stats": {"min": float(np.nanmin(arr)), "max": float(np.nanmax(arr)), "mean": float(np.nanmean(arr))},
+            "layers": {
+                "anomaly": {"grid": _norm_list(arr, size), "detects": "Magnetic anomaly (magnetite, BIF, intrusions, demagnetised alteration)"},
+                "tilt_derivative": {"grid": _norm_list(derivs["tilt_derivative"], size), "detects": "Balanced edges of shallow and deep sources"},
+                "analytic_signal": {"grid": _norm_list(derivs["analytic_signal"], size), "detects": "Edge + depth amplitude"},
+                "total_horizontal_gradient": {"grid": _norm_list(derivs["total_horizontal_gradient"], size), "detects": "Structural edges / contacts"},
+                "worms": {"grid": _norm_list(derivs["worms"], size), "detects": "Multiscale crustal-fault edges"},
+            },
+            "depth_to_source": {
+                "grid": _norm_list(depth_km, size),
+                "min_km": float(np.nanmin(depth_km)),
+                "max_km": float(np.nanmax(depth_km)),
+                "mean_km": float(np.nanmean(depth_km)),
+                "method": "Source Parameter Imaging (local wavenumber of analytic signal)",
+            },
+        }
+        if GRAVITY_URL:
+            try:
+                garr = _read_global_grid(GRAVITY_URL, bbox, size, lon_0_360=False)
+                if np.isfinite(garr).any():
+                    gfield = np.where(np.isfinite(garr), garr, np.nanmean(garr[np.isfinite(garr)]))
+                    gderivs = potential_field_derivatives(gfield)
+                    out["gravity"] = {
+                        "available": True,
+                        "source": "configured gravity grid",
+                        "layers": {
+                            "anomaly": {"grid": _norm_list(garr, size)},
+                            "total_horizontal_gradient": {"grid": _norm_list(gderivs["total_horizontal_gradient"], size)},
+                            "worms": {"grid": _norm_list(gderivs["worms"], size)},
+                        },
+                    }
+            except Exception:
+                pass
+        return out
+    except Exception as e:  # noqa
+        return {"available": False, "reason": f"Magnetic read failed: {type(e).__name__}: {str(e)[:200]}"}
+
+
 @app.post("/derivatives")
 async def derivatives(file: UploadFile = File(...), field_type: str = "magnetic", size: int = 48):
     """Compute potential-field derivatives from an uploaded magnetic/gravity GeoTIFF."""

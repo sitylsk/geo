@@ -105,10 +105,15 @@ Node app cannot handle natively:
   clay/hydroxyl, vegetation stress) from Microsoft Planetary Computer via
   rasterio. These fold automatically into the prospectivity model as a real
   alteration layer when the service is running.
-- **Potential-field derivatives** (tilt derivative, analytic signal, total
-  horizontal gradient, vertical derivative, multiscale "worms") computed from an
-  operator-supplied magnetic or gravity **GeoTIFF** - the real airborne-survey
-  workflow.
+- **Real global magnetic anomaly (EMAG2v3, NOAA)** auto-ingested per AOI via
+  GDAL `/vsicurl/` windowed reads, with derivatives (tilt, analytic signal,
+  total horizontal gradient, worms) and a **Source Parameter Imaging
+  depth-to-source** estimate. Folds into the model as a real magnetics layer.
+- **Potential-field derivatives** on an operator-supplied magnetic/gravity
+  **GeoTIFF** (airborne-survey workflow).
+- **3D depth viewer** (`/viewer3d`): stacked depth shells coloured by
+  prospectivity with targets placed at estimated source depth (Three.js).
+- Optional global **gravity** grid: set `GRAVITY_URL` to a reachable COG.
 
 ### Run the raster service
 

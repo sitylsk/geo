@@ -75,3 +75,37 @@ export async function fetchAlteration(bounds, size = 16) {
     return null;
   }
 }
+
+/** Fetch real magnetic anomaly (EMAG2v3) + derivatives + SPI depth for an AOI. */
+export async function fetchPotentialField(bounds, size = 16) {
+  try {
+    const body = {
+      bbox: [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat],
+      size: Math.max(16, Math.min(48, size)),
+    };
+    const res = await fetch(`${RASTER_URL}/potential-field`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.available) return { available: false, reason: data.reason };
+    return {
+      available: true,
+      source: data.source,
+      stats: data.stats,
+      // analytic signal = structural/intrusive edge favorability (commodity-agnostic)
+      magneticsGrid: data.layers?.analytic_signal?.grid || data.layers?.anomaly?.grid || null,
+      anomalyGrid: data.layers?.anomaly?.grid || null,
+      tiltGrid: data.layers?.tilt_derivative?.grid || null,
+      thgGrid: data.layers?.total_horizontal_gradient?.grid || null,
+      depthToSource: data.depth_to_source || null,
+      gravity: data.gravity || null,
+    };
+  } catch {
+    return null;
+  }
+}
+

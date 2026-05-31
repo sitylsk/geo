@@ -64,15 +64,17 @@ api.get("/sources", async (_req, res) => {
       online: Boolean(raster.ok),
       capabilities: raster.capabilities || null,
       provides: [
+        { id: "emag2-magnetics", name: "EMAG2v3 global magnetic anomaly + derivatives + SPI depth-to-source", status: raster.ok ? "live" : "service offline", real: true },
         { id: "sentinel2-ratios", name: "Sentinel-2 alteration band ratios", status: raster.ok ? "live" : "service offline", real: true },
         { id: "aster-ratios", name: "ASTER band ratios", status: raster.ok ? "live" : "service offline", real: true },
-        { id: "potential-field-derivatives", name: "Magnetic/gravity derivatives (tilt, analytic signal, THG, worms) on uploaded survey GeoTIFF", status: raster.ok ? "live" : "service offline", real: true },
+        { id: "depth-3d", name: "3D depth model (depth shells + SPI source depth)", status: raster.ok ? "live" : "service offline", real: true },
+        { id: "potential-field-derivatives", name: "Magnetic/gravity derivatives on uploaded survey GeoTIFF", status: raster.ok ? "live" : "service offline", real: true },
       ],
     },
     roadmap: [
-      { id: "emag2", name: "Global EMAG2 magnetic anomaly auto-fetch", status: "needs reliable open grid source" },
-      { id: "gravity", name: "Global gravity anomaly auto-fetch", status: "needs reliable open grid source" },
+      { id: "gravity", name: "Global gravity anomaly auto-fetch (set GRAVITY_URL to a COG to enable)", status: "configurable" },
       { id: "radiometrics", name: "Airborne K/U/Th radiometrics (regional coverage)", status: "coverage-dependent" },
+      { id: "inversion-3d", name: "Full 3D geophysical inversion (SimPEG-class)", status: "roadmap" },
     ],
   });
 });

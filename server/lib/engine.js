@@ -279,6 +279,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
       };
       const ag = realProspectivity.alteration;
       if (ag && realProspectivity.dataConfidence?.alteration) realEvidence.alteration = "Mapped (Sentinel-2)";
+      if (realProspectivity.magnetics) realEvidence.magnetics = "EMAG2 anomaly";
     }
 
     return {
@@ -318,6 +319,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     dataConfidence: realProspectivity?.dataConfidence || null,
     hostRock: realProspectivity?.geologyFavorability || null,
     alteration: realProspectivity?.alteration || null,
+    magnetics: realProspectivity?.magnetics || null,
     realScoreGrid: realProspectivity?.scoreGrid || null,
     commodity: {
       id: commodity.id,

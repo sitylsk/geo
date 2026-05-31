@@ -42,6 +42,7 @@ export function publicEngineResult(result) {
     dataConfidence: result.dataConfidence || null,
     hostRock: result.hostRock ? { score: result.hostRock.score, note: result.hostRock.note, lith: result.hostRock.dominantLith, age: result.hostRock.dominantAge } : null,
     alteration: result.alteration ? { scene: result.alteration.scene, cloud: result.alteration.cloud, source: result.alteration.source } : null,
+    magnetics: result.magnetics ? { source: result.magnetics.source, stats: result.magnetics.stats, depthToSource: result.magnetics.depthToSource } : null,
     validation: result.validation || null,
     spatialValidation: result.spatialValidation || null,
     generatedAt: result.generatedAt,
