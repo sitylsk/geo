@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing - Anthill</title>
+    <meta name="description" content="Exploration intelligence plans for prospectors, producers and major mines." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/pages.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/"><span class="logo"></span><span>Anthill<small>Discovery Intelligence</small></span></a>
+        <div class="nav-links">
+          <a href="/#find">What we find</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-primary" href="/explorer">Launch Explorer</a>
+        </div>
+      </div>
+    </nav>
+
+    <section class="section">
+      <div class="container">
+        <div style="text-align: center; max-width: 720px; margin: 0 auto">
+          <div class="eyebrow">Pricing</div>
+          <h2>Plans built for how mines actually explore</h2>
+          <p class="lead" style="margin: 0 auto">
+            From a single permit to a continental portfolio. Every plan includes ranked
+            target maps, intelligence briefs and export.
+          </p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="card price-card">
+            <div class="tier-name">Prospector</div>
+            <div class="price"><span class="amt">$490</span><span class="per">/ month</span></div>
+            <p class="price-sub">Solo geologists &amp; junior explorers.</p>
+            <ul class="feat">
+              <li>Up to 3 active licence areas</li>
+              <li>All supported resources</li>
+              <li>HD target maps + circled priorities</li>
+              <li>50 intelligence reports / month</li>
+              <li>GeoJSON &amp; report export</li>
+              <li>Email support</li>
+            </ul>
+            <a class="btn btn-ghost btn-lg" href="/contact?plan=Prospector">Start with Prospector</a>
+          </div>
+
+          <div class="card price-card featured">
+            <div class="ribbon">Most popular</div>
+            <div class="tier-name">Producer</div>
+            <div class="price"><span class="amt">$2,400</span><span class="per">/ month</span></div>
+            <p class="price-sub">Mid-tier producers &amp; exploration teams.</p>
+            <ul class="feat">
+              <li>Up to 25 licence areas</li>
+              <li>Unlimited intelligence reports</li>
+              <li>High-resolution target maps</li>
+              <li>Continuous learning from your results</li>
+              <li>Multi-user workspace (10 seats)</li>
+              <li>Priority support &amp; data ingest</li>
+              <li>Dedicated account engineer</li>
+            </ul>
+            <a class="btn btn-primary btn-lg" href="/contact?plan=Producer">Choose Producer</a>
+          </div>
+
+          <div class="card price-card">
+            <div class="tier-name">Major / Survey</div>
+            <div class="price"><span class="amt">Custom</span></div>
+            <p class="price-sub">Majors, nationals &amp; geological surveys.</p>
+            <ul class="feat">
+              <li>Unlimited licence areas &amp; seats</li>
+              <li>Private intelligence tuned to your ground</li>
+              <li>Proprietary data integration</li>
+              <li>On-prem / VPC deployment option</li>
+              <li>Continental-scale batch scanning</li>
+              <li>SSO, audit logs, SLA</li>
+              <li>White-glove onboarding</li>
+            </ul>
+            <a class="btn btn-accent btn-lg" href="/contact?plan=Major">Talk to sales</a>
+          </div>
+        </div>
+
+        <div class="card faq">
+          <h3>What every plan includes</h3>
+          <div class="grid grid-3" style="margin-top: 14px">
+            <div><h4>Ranked targets</h4><p>Priority-scored, circled targets on HD maps - ready for your ground crew.</p></div>
+            <div><h4>Intelligence briefs</h4><p>Decision-ready summaries so your team knows where to go first.</p></div>
+            <div><h4>Export &amp; share</h4><p>Download maps and reports for field teams, partners and the board.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-band">
+      <div class="container cta-inner">
+        <div><h2>Not sure which plan fits your ground?</h2><p class="lead">Tell us your commodity and licence footprint - we'll recommend a plan and run a free pilot scan.</p></div>
+        <a class="btn btn-accent btn-lg" href="/contact">Contact us today</a>
+      </div>
+    </section>
+
+    <footer class="site">
+      <div class="container">
+        <div class="footer-bottom" style="border: none; margin: 0; padding: 0">
+          <span>© <span id="year"></span> Anthill. Pricing indicative - final terms in your order form.</span>
+          <span><a href="/">Home</a> · <a href="/explorer">Explorer</a> · <a href="/contact">Contact</a></span>
+        </div>
+      </div>
+    </footer>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
+</html>

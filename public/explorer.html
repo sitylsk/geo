@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explorer - Anthill</title>
+    <meta name="description" content="Pick a resource and location. Get a ranked target map and intelligence brief." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/explorer.css" />
+  </head>
+  <body class="explorer-body">
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/"><span class="logo"></span><span>Anthill<small>Explorer</small></span></a>
+        <div class="nav-links">
+          <a href="/#find">What we find</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-ghost" href="/">← Home</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="explorer-shell">
+      <aside class="panel" id="panel">
+        <div class="panel-head">
+          <h2>Target Builder</h2>
+        </div>
+
+        <div class="discover-box">
+          <div class="discover-label">What is here?</div>
+          <p class="hint">Type any place. Anthill scans every resource and tells you what is most likely, where, and why.</p>
+          <div class="discover-row">
+            <input id="discover-place" type="text" placeholder="e.g. Kitwe, Zambia" autocomplete="off" />
+            <button id="discover-btn" class="btn btn-primary">Discover</button>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Resource</span>
+          <select id="commodity"></select>
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Latitude</span>
+            <input id="lat" type="number" step="0.0001" value="-13.1500" />
+          </label>
+          <label class="field">
+            <span>Longitude</span>
+            <input id="lng" type="number" step="0.0001" value="28.6000" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Search area - <b id="radius-val">35</b> km</span>
+          <input id="radius" type="range" min="5" max="200" value="35" />
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Map detail</span>
+            <select id="grid">
+              <option value="28">Standard</option>
+              <option value="36" selected>Detailed</option>
+              <option value="48">High</option>
+              <option value="60">Maximum</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Max targets</span>
+            <select id="maxTargets">
+              <option>4</option>
+              <option selected>6</option>
+              <option>8</option>
+              <option>10</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="hint">Click anywhere on the map to set your search centre.</div>
+
+        <label class="switch deep-scan-toggle"><span>Deep ground scan <small>(L-band SAR)</small></span><input id="deep-scan" type="checkbox" /></label>
+        <label class="switch deep-scan-toggle xray-toggle"><span>X-ray subsurface stack <small>(mag + gravity + geochem + thermal)</small></span><input id="xray-scan" type="checkbox" /></label>
+
+        <div class="upload-box">
+          <div class="lc-head">Your documents <small>(optional)</small></div>
+          <p class="hint">Add old survey reports, assays, field notes or CSV data. Text, CSV and JSON are read and fed into the analysis.</p>
+          <label class="btn btn-ghost upload-btn" for="doc-input">+ Add documents</label>
+          <input id="doc-input" type="file" multiple accept=".txt,.csv,.json,.md,.tsv,.log,.geojson" hidden />
+          <div id="doc-list" class="doc-list"></div>
+        </div>
+
+        <div class="btn-stack">
+          <button id="scan-btn" class="btn btn-primary btn-lg">Run scan</button>
+          <button id="analyze-btn" class="btn btn-accent btn-lg">Generate intelligence report</button>
+        </div>
+
+        <div class="layer-controls">
+          <div class="lc-head">Map layers</div>
+          <label class="field">
+            <span>View layer</span>
+            <select id="layer-view">
+              <option value="target">Target priority (combined)</option>
+              <option value="subsurface">L-band subsurface</option>
+              <option value="magnetic">Magnetics</option>
+              <option value="gravity">Gravity</option>
+              <option value="geochem">Geochem proxy</option>
+              <option value="thermal">Temperature</option>
+              <option value="moisture">Soil moisture</option>
+              <option value="xray">X-ray fusion</option>
+              <option value="depth-shallow">Depth 0-15 m</option>
+              <option value="depth-mid">Depth 15-80 m</option>
+              <option value="depth-deep">Depth 80-250 m</option>
+              <option value="depth-basement">Depth 250 m+</option>
+            </select>
+          </label>
+          <label class="switch"><span>Subsurface scan map</span><input id="toggle-subsurface" type="checkbox" checked disabled /></label>
+          <label class="switch"><span>Target colour map</span><input id="toggle-heat" type="checkbox" checked /></label>
+          <label class="switch"><span>Circled targets</span><input id="toggle-targets" type="checkbox" checked /></label>
+          <label class="field">
+            <span>Map opacity - <b id="opacity-val">75</b>%</span>
+            <input id="opacity" type="range" min="20" max="100" value="75" />
+          </label>
+          <label class="field">
+            <span>Base map</span>
+            <select id="basemap">
+              <option value="sat">Satellite (HD)</option>
+              <option value="satlabel" selected>Satellite + labels</option>
+              <option value="topo">Topographic</option>
+              <option value="dark">Dark</option>
+              <option value="street">Street</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="export-row">
+          <button id="export-geojson" class="btn btn-ghost">⬇ GeoJSON</button>
+          <button id="export-report" class="btn btn-ghost">⬇ Report</button>
+        </div>
+
+        <p class="disclaimer">For exploration planning only - validate all targets with field work before economic decisions.</p>
+      </aside>
+
+      <main class="map-wrap">
+        <div id="map"></div>
+        <div id="legend" class="legend hidden">
+          <div class="legend-title">Target priority</div>
+          <div class="legend-bar"></div>
+          <div class="legend-scale"><span>Low</span><span>Med</span><span>High</span></div>
+        </div>
+        <div id="status" class="status hidden"></div>
+        <button id="results-toggle" class="results-toggle hidden">Results ▸</button>
+      </main>
+
+      <section class="results" id="results">
+        <div class="results-head">
+          <h2>Results</h2>
+          <button id="results-close" class="icon-btn">✕</button>
+        </div>
+        <div id="results-body" class="results-body">
+          <div class="empty-state">
+            <div class="es-icon">🛰️</div>
+            <h3>No scan yet</h3>
+            <p>Choose a resource and location, then run a scan or generate an intelligence report. Ranked targets and your brief will appear here.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/assets/explorer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Anthill - Discovery Intelligence for Land & Lithosphere</title>
+    <meta
+      name="description"
+      content="Anthill finds minerals, gemstones, energy and water targets anywhere on Earth - ranked, mapped and ready for your ground crew."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/theme.css" />
+    <link rel="stylesheet" href="/assets/landing.css" />
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container nav-inner">
+        <a class="brand" href="/">
+          <span class="logo"></span>
+          <span>Anthill<small>Discovery Intelligence</small></span>
+        </a>
+        <div class="nav-links">
+          <a href="/#find">What we find</a>
+          <a href="/#deliver">What you get</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/contact">Contact</a>
+          <a class="btn btn-primary" href="/explorer">Launch Explorer</a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <span class="pill">● Anthill · Advanced Neural Targeting &amp; Hyper-spectral Intelligence for Land &amp; Lithosphere</span>
+          <h1>The targets others missed are still out there.</h1>
+          <p class="hero-sub">
+            Anthill turns your licence area into a ranked map of opportunity - minerals,
+            gemstones, energy and water - so your team goes straight to the ground that
+            matters.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" href="/explorer">Scan a location</a>
+            <a class="btn btn-ghost btn-lg" href="/pricing">View pricing</a>
+          </div>
+          <div class="hero-stats">
+            <div><strong id="stat-commodities"> - </strong><span>resources tracked</span></div>
+            <div><strong>Global</strong><span>coverage</span></div>
+            <div><strong>HD</strong><span>target maps</span></div>
+            <div><strong>Ranked</strong><span>priority targets</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="globe-card card">
+            <div class="globe-ring"></div>
+            <div class="globe-ring r2"></div>
+            <div class="globe-core"></div>
+            <div class="scanline"></div>
+            <div class="hot a"></div>
+            <div class="hot b"></div>
+            <div class="hot c"></div>
+            <div class="globe-label">Live target intelligence</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="section" id="problem">
+      <div class="container">
+        <div class="eyebrow">Why Anthill</div>
+        <h2>The easy finds are gone. The opportunity isn't.</h2>
+        <p class="lead">
+          The world's best remaining deposits are hidden - under cover, beneath canopy,
+          or inside ground nobody thought to look at. Anthill exists so explorers stop
+          searching provinces and start searching coordinates.
+        </p>
+        <div class="grid grid-3" style="margin-top: 32px">
+          <div class="card">
+            <h3>Hidden ground</h3>
+            <p>Targets that never showed up on a geologist's map - because nobody was looking in the right place.</p>
+          </div>
+          <div class="card">
+            <h3>Faster decisions</h3>
+            <p>Ranked targets on day one, not after months of desk study and dead-end traverses.</p>
+          </div>
+          <div class="card">
+            <h3>Any licence, anywhere</h3>
+            <p>From a single permit in Zambia to a continental portfolio - one platform, one workflow.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="find">
+      <div class="container">
+        <div class="eyebrow">What we find</div>
+        <h2>Every resource your team is chasing</h2>
+        <p class="lead">
+          Pick a commodity. Drop a pin. Anthill returns the targets worth your attention.
+        </p>
+        <div id="commodity-grid" class="grid grid-4" style="margin-top: 30px">
+          <div class="card muted-card">Loading…</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="deliver">
+      <div class="container">
+        <div class="eyebrow">What you get</div>
+        <h2>From coordinates to ground truth</h2>
+        <p class="lead">Everything your exploration team needs to mobilise - nothing they don't.</p>
+        <div class="feature-grid" style="margin-top: 34px">
+          <div class="feature-card">
+            <div class="feature-icon icon-map">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/></svg>
+            </div>
+            <h3>Ranked target map</h3>
+            <p>High-resolution colour maps with circled priority targets, confidence scores and search halos.</p>
+            <span class="feature-tag">Visual</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon icon-brief">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+            </div>
+            <h3>Intelligence brief</h3>
+            <p>A decision-ready summary for each scan: who goes where, and why that ground ranks first.</p>
+            <span class="feature-tag">AI + data</span>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon icon-export">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+            </div>
+            <h3>Export &amp; mobilise</h3>
+            <p>Download targets and reports to share with your field crew, JV partners or board.</p>
+            <span class="feature-tag">GeoJSON</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-band">
+      <div class="container cta-inner">
+        <div>
+          <h2>Send your ground crew to a pixel, not a province.</h2>
+          <p class="lead">Open the Explorer, choose what you're looking for, and see what's hiding in your ground.</p>
+        </div>
+        <a class="btn btn-accent btn-lg" href="/explorer">Open the Explorer</a>
+      </div>
+    </section>
+
+    <footer class="site">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <a class="brand" href="/"><span class="logo"></span><span>Anthill</span></a>
+            <p style="margin-top: 14px; max-width: 320px">
+              Advanced Neural Targeting &amp; Hyper-spectral Intelligence for Land &amp; Lithosphere.
+            </p>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <a href="/explorer">Explorer</a>
+            <a href="/#find">What we find</a>
+            <a href="/pricing">Pricing</a>
+          </div>
+          <div>
+            <h4>Resources</h4>
+            <a href="/explorer">Minerals &amp; gems</a>
+            <a href="/explorer">Oil &amp; gas</a>
+            <a href="/explorer">Geothermal</a>
+            <a href="/explorer">Groundwater</a>
+          </div>
+          <div>
+            <h4>Company</h4>
+            <a href="/contact">Contact us</a>
+            <a href="/pricing">Plans for mines</a>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© <span id="year"></span> Anthill. For exploration planning only - not verified resource evidence.</span>
+          <span>Built for explorers who refuse to dig blind.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/assets/landing.js"></script>
+  </body>
+</html>

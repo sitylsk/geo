@@ -1,0 +1,406 @@
+// Commodity knowledge base.
+// Each entry encodes the deposit model, geophysical/geochemical signatures,
+// remote-sensing spectral band recipes, and surface satellite cues used to
+// vector toward blind (covered) targets. Signatures are tailored per commodity
+// the same way the gold/arsenopyrite workflow was, but generalised so the
+// engine can hunt any selected commodity in any location.
+
+export const CATEGORIES = [
+  { id: "precious", name: "Precious Metals", color: "#f5c542" },
+  { id: "base", name: "Base & Battery Metals", color: "#4fb0ff" },
+  { id: "gemstone", name: "Gemstones", color: "#ff6fd8" },
+  { id: "critical", name: "Critical & Rare Earths", color: "#9b8cff" },
+  { id: "energy", name: "Energy", color: "#ff8a3d" },
+  { id: "water", name: "Groundwater", color: "#34d6c8" },
+];
+
+// Spectral recipes. Sentinel-2 (S2) bands and ASTER bands.
+// "rgb" is the false-colour band assignment used for the color map preview.
+export const SPECTRAL_RECIPES = {
+  asterSulphide: {
+    id: "asterSulphide",
+    label: "ASTER Sulphide Ratio (RGB 12-5-3)",
+    sensor: "ASTER",
+    rgb: [12, 5, 3],
+    detects: "Sulphide / arsenic-iron alteration halos",
+    palette: ["#1b2a1f", "#3a6b3a", "#d14fb0", "#ff8af0"],
+  },
+  asterArgillic: {
+    id: "asterArgillic",
+    label: "ASTER Argillic / Iron Ratio (RGB 4-2-1)",
+    sensor: "ASTER",
+    rgb: [4, 2, 1],
+    detects: "Argillic clay alteration + iron staining (gossan caps)",
+    palette: ["#10131a", "#5a3a1f", "#ff7a1f", "#ffe14f"],
+  },
+  ironOxideS2: {
+    id: "ironOxideS2",
+    label: "Iron Oxide Index (S2 B4/B2)",
+    sensor: "Sentinel-2",
+    expr: "B04 / B02",
+    detects: "Ferric iron / gossan / hematite-goethite caps",
+    palette: ["#08141f", "#6b3a10", "#d1601f", "#ffd24f"],
+  },
+  ferrousS2: {
+    id: "ferrousS2",
+    label: "Ferrous Iron Index (S2 B11/B8A)",
+    sensor: "Sentinel-2",
+    expr: "B11 / B8A",
+    detects: "Ferrous iron + canopy-penetrating sulphide signature",
+    palette: ["#0a1020", "#243a6b", "#3d8ad1", "#7fe0ff"],
+  },
+  clayS2: {
+    id: "clayS2",
+    label: "Clay / Hydroxyl Index (S2 B11/B12)",
+    sensor: "Sentinel-2",
+    expr: "B11 / B12",
+    detects: "Phyllic/argillic clay alteration (sericite, kaolinite)",
+    palette: ["#12101a", "#3a2a5a", "#8a5ad1", "#e0b0ff"],
+  },
+  ndviStress: {
+    id: "ndviStress",
+    label: "Vegetation Stress (NDVI anomaly)",
+    sensor: "Sentinel-2",
+    expr: "(B08 - B04) / (B08 + B04)",
+    detects: "Geobotanical stress over acidic / metal-rich soils",
+    palette: ["#3a0d0d", "#8a3a1f", "#d9d04f", "#2f9e44"],
+  },
+  ndwiWater: {
+    id: "ndwiWater",
+    label: "Moisture / NDWI (S2 B3-B8 ratio)",
+    sensor: "Sentinel-2",
+    expr: "(B03 - B08) / (B03 + B08)",
+    detects: "Surface moisture, shallow water table, dambo seepage",
+    palette: ["#2a1a0d", "#7a5a2a", "#3d8ad1", "#34d6c8"],
+  },
+  thermalHydrocarbon: {
+    id: "thermalHydrocarbon",
+    label: "Hydrocarbon Microseepage (S2 B12/B11 + clay bleach)",
+    sensor: "Sentinel-2",
+    expr: "B12 / B11",
+    detects: "Carbonate cement / bleaching from hydrocarbon microseepage",
+    palette: ["#0d0d12", "#3a2a1f", "#8a6a3d", "#ffcf7f"],
+  },
+  thermalGeo: {
+    id: "thermalGeo",
+    label: "Thermal Anomaly (Landsat TIRS)",
+    sensor: "Landsat 8/9",
+    expr: "ST_B10",
+    detects: "Geothermal surface heat flux / silica sinter",
+    palette: ["#0a0f2a", "#3a2a8a", "#d14f4f", "#ffec5f"],
+  },
+  lithiumPegmatite: {
+    id: "lithiumPegmatite",
+    label: "Pegmatite / Li Index (S2 B11/B12 + B4/B3)",
+    sensor: "Sentinel-2",
+    expr: "(B11/B12) * (B04/B03)",
+    detects: "LCT pegmatite bright leucocratic outcrops + clay rims",
+    palette: ["#101412", "#3a5a3a", "#9bd14f", "#e6ff7f"],
+  },
+  kimberlite: {
+    id: "kimberlite",
+    label: "Kimberlite Index (S2 NDVI lows + clay + circular)",
+    sensor: "Sentinel-2",
+    expr: "(B11/B12) - NDVI",
+    detects: "Weathered kimberlite clay pans, circular vegetation rings",
+    palette: ["#0d120d", "#2a3a2a", "#7a8a5a", "#cfe08a"],
+  },
+};
+
+const recipe = (id) => SPECTRAL_RECIPES[id];
+
+export const COMMODITIES = [
+  // ---------------- Precious metals ----------------
+  {
+    id: "gold-orogenic",
+    name: "Gold",
+    category: "precious",
+    color: "#f5c542",
+    depositModel: "Orogenic lode gold in deep crustal shear zones; gold hosted in arsenopyrite-pyrite veins.",
+    hostRocks: ["Greenstone", "Banded iron formation", "Metasediments", "Sheared granite"],
+    geophysics: {
+      gravity: "Subtle localized gravity high over dense sulphide pods.",
+      magnetic: "Magnetic quiet (demagnetised) shear zones between magnetic highs.",
+      radiometric: "K enrichment along altered shear corridors.",
+    },
+    geochemistry: { pathfinders: ["As", "Au", "Sb", "W", "Bi", "Te"] },
+    spectral: ["asterSulphide", "ironOxideS2", "ferrousS2", "ndviStress"].map(recipe),
+    satelliteCues: "Linear magenta alteration halos in canopy; stunted vegetation over acidic As soils; gossan caps on ridge tops.",
+  },
+  // ---------------- Base & battery metals ----------------
+  {
+    id: "copper-sediment",
+    name: "Copper",
+    category: "base",
+    color: "#4fb0ff",
+    depositModel: "Stratiform / structurally-remobilised copper-cobalt in reduced sediments and basin margins.",
+    hostRocks: ["Argillite", "Dolomite", "Arenite", "Basement dome margins"],
+    geophysics: {
+      gravity: "Dense mineralised horizons; basement dome gravity highs.",
+      magnetic: "Magnetite/pyrrhotite trends; dome-margin contour wrapping.",
+      radiometric: "K alteration around fluid pathways.",
+    },
+    geochemistry: { pathfinders: ["Cu", "Co", "Ag", "Mo", "U"] },
+    spectral: ["clayS2", "ironOxideS2", "ferrousS2", "asterArgillic"].map(recipe),
+    satelliteCues: "Malachite-green staining on outcrop, clay-altered halos, dome-margin spurs.",
+  },
+  {
+    id: "copper-porphyry",
+    name: "Copper-Gold",
+    category: "base",
+    color: "#5ad1c8",
+    depositModel: "Large tonnage porphyry Cu-Au with concentric potassic-phyllic-argillic alteration zoning.",
+    hostRocks: ["Granodiorite", "Diorite porphyry", "Volcanics"],
+    geophysics: {
+      gravity: "Annular density pattern around intrusive core.",
+      magnetic: "Magnetite-destructive phyllic core inside magnetic potassic shell.",
+      radiometric: "K-rich potassic core; concentric zoning.",
+    },
+    geochemistry: { pathfinders: ["Cu", "Au", "Mo", "Re", "Pb", "Zn"] },
+    spectral: ["clayS2", "asterArgillic", "ironOxideS2"].map(recipe),
+    satelliteCues: "Concentric argillic clay rings, leached cap gossans, radial drainage over intrusion.",
+  },
+  {
+    id: "nickel-cobalt",
+    name: "Nickel-Cobalt",
+    category: "base",
+    color: "#7fd14f",
+    depositModel: "Magmatic Ni-Cu-Co sulphides in mafic-ultramafic bodies, or laterite over ultramafics.",
+    hostRocks: ["Komatiite", "Dunite", "Peridotite", "Laterite profile"],
+    geophysics: {
+      gravity: "Dense ultramafic bodies.",
+      magnetic: "Strong magnetic ultramafic intrusions and feeder dykes.",
+      radiometric: "Low K, low Th over ultramafics.",
+    },
+    geochemistry: { pathfinders: ["Ni", "Co", "Cu", "Cr", "PGE", "MgO"] },
+    spectral: ["ferrousS2", "ironOxideS2", "ndviStress"].map(recipe),
+    satelliteCues: "Dark serpentinised outcrops, reddish laterite caps, ultramafic vegetation contrast.",
+  },
+  {
+    id: "manganese",
+    name: "Manganese",
+    category: "base",
+    color: "#b06fff",
+    depositModel: "Sedimentary / supergene Mn oxides in weathered basins and karst.",
+    hostRocks: ["Banded Mn formation", "Karst infill", "Weathered shales"],
+    geophysics: {
+      gravity: "Dense oxide lenses.",
+      magnetic: "Variable; weak highs over oxide bodies.",
+      radiometric: "Subdued signature.",
+    },
+    geochemistry: { pathfinders: ["Mn", "Fe", "Ba", "Co", "Ni"] },
+    spectral: ["ironOxideS2", "asterArgillic", "clayS2"].map(recipe),
+    satelliteCues: "Black-purple oxide outcrops, dark soil staining on slope breaks.",
+  },
+  // ---------------- Gemstones ----------------
+  {
+    id: "emerald",
+    name: "Emerald",
+    category: "gemstone",
+    color: "#2ecf6f",
+    depositModel: "Beryllium-chromium contact between pegmatite/granite fluids and Cr-bearing mafic/ultramafic schist (biotite reaction zone).",
+    hostRocks: ["Talc-chlorite schist", "Phlogopite reaction zone", "Pegmatite contact"],
+    geophysics: {
+      gravity: "Local contrast at mafic/granitic contact.",
+      magnetic: "Magnetic contrast across ultramafic vs granite contact.",
+      radiometric: "K/Th high in pegmatite intruding low-K schist.",
+    },
+    geochemistry: { pathfinders: ["Be", "Cr", "V", "Li", "Cs", "Ta"] },
+    spectral: ["clayS2", "ferrousS2", "asterArgillic", "ndviStress"].map(recipe),
+    satelliteCues: "Pegmatite-schist contacts, phlogopite reaction selvedges, artisanal pit clusters along contact.",
+  },
+  {
+    id: "diamond",
+    name: "Diamond",
+    category: "gemstone",
+    color: "#bfe9ff",
+    depositModel: "Diamond-bearing kimberlite/lamproite pipes intruding cratonic basement.",
+    hostRocks: ["Kimberlite pipe", "Craton basement", "Crater-facies sediments"],
+    geophysics: {
+      gravity: "Subtle negative over weathered pipe (low-density crater fill).",
+      magnetic: "Circular magnetic high/low bullseye anomaly.",
+      radiometric: "Distinct K/Th/U signature of weathered kimberlite clay.",
+    },
+    geochemistry: { pathfinders: ["Cr-diopside", "Pyrope garnet", "Picroilmenite", "Ni", "Nb"] },
+    spectral: ["kimberlite", "clayS2", "ndviStress", "ndwiWater"].map(recipe),
+    satelliteCues: "Circular vegetation rings, shallow saucer pans, anomalous circular clay soils.",
+  },
+  {
+    id: "ruby-sapphire",
+    name: "Ruby & Sapphire",
+    category: "gemstone",
+    color: "#ff4f6f",
+    depositModel: "Corundum in metamorphosed Al-rich rocks (marble, amphibolite) or alkali basalt placers.",
+    hostRocks: ["Marble", "Amphibolite", "Gneiss", "Alkali basalt placer"],
+    geophysics: {
+      gravity: "Marble/gneiss density contrasts.",
+      magnetic: "Amphibolite magnetic bands; basalt highs.",
+      radiometric: "Low-K marble corridors.",
+    },
+    geochemistry: { pathfinders: ["Al", "Cr", "Fe", "Ti", "V"] },
+    spectral: ["clayS2", "ironOxideS2", "ndviStress"].map(recipe),
+    satelliteCues: "Marble bands, amphibolite contacts, alluvial gem gravels downstream of basalt.",
+  },
+  {
+    id: "aquamarine-tourmaline",
+    name: "Aquamarine & Tourmaline",
+    category: "gemstone",
+    color: "#7fd6ff",
+    depositModel: "Gem-bearing zoned LCT pegmatites with miarolitic cavities.",
+    hostRocks: ["Zoned pegmatite", "Granite cupola", "Mica schist host"],
+    geophysics: {
+      gravity: "Low-density leucocratic pegmatite bodies.",
+      magnetic: "Magnetic-low pegmatite within magnetic host.",
+      radiometric: "Strong K + U/Th from feldspar/accessory minerals.",
+    },
+    geochemistry: { pathfinders: ["Be", "Li", "B", "Cs", "Ta", "Nb"] },
+    spectral: ["lithiumPegmatite", "clayS2", "asterArgillic"].map(recipe),
+    satelliteCues: "Bright white leucocratic dykes, kaolinised pegmatite rims, artisanal pit lines.",
+  },
+  {
+    id: "amethyst",
+    name: "Amethyst",
+    category: "gemstone",
+    color: "#a06fff",
+    depositModel: "Amethyst in epithermal veins, basalt vugs, and silicified fault breccias.",
+    hostRocks: ["Basalt amygdales", "Silicified breccia", "Vein quartz"],
+    geophysics: {
+      gravity: "Minor silica vein contrasts.",
+      magnetic: "Demagnetised silicified fault zones.",
+      radiometric: "Silica-flooded zones low in K.",
+    },
+    geochemistry: { pathfinders: ["Si", "Fe", "Mn", "trace Fe3+"] },
+    spectral: ["ironOxideS2", "clayS2", "asterArgillic"].map(recipe),
+    satelliteCues: "Resistant silicified ridges, vein outcrops, iron-stained vug zones.",
+  },
+  // ---------------- Critical & rare earths ----------------
+  {
+    id: "lithium",
+    name: "Lithium",
+    category: "critical",
+    color: "#9b8cff",
+    depositModel: "Spodumene/petalite LCT pegmatites, or Li-enriched salar brines.",
+    hostRocks: ["Zoned pegmatite", "Greenstone host", "Salar / playa brine"],
+    geophysics: {
+      gravity: "Low-density pegmatite; basin brine contrasts.",
+      magnetic: "Magnetic-low pegmatite bodies.",
+      radiometric: "K/U/Th highs from pegmatite accessory minerals.",
+    },
+    geochemistry: { pathfinders: ["Li", "Cs", "Ta", "Rb", "Be", "Sn"] },
+    spectral: ["lithiumPegmatite", "clayS2", "asterArgillic", "ndwiWater"].map(recipe),
+    satelliteCues: "Bright bell-shaped leucogranite/pegmatite outcrops; salar evaporite crusts.",
+  },
+  {
+    id: "ree",
+    name: "Rare Earth Elements",
+    category: "critical",
+    color: "#d18cff",
+    depositModel: "REE in carbonatite complexes, alkaline intrusions and associated laterite.",
+    hostRocks: ["Carbonatite", "Alkaline syenite", "Fenite aureole", "Laterite"],
+    geophysics: {
+      gravity: "Dense carbonatite core gravity high.",
+      magnetic: "Strong circular magnetic anomaly (magnetite-rich core).",
+      radiometric: "Very high Th/U + LREE radiometric bullseye.",
+    },
+    geochemistry: { pathfinders: ["La", "Ce", "Nd", "Nb", "P", "Th", "Sr"] },
+    spectral: ["ironOxideS2", "clayS2", "ndviStress"].map(recipe),
+    satelliteCues: "Circular alkaline ring complex, radial drainage, fenitised halo, vegetation contrast.",
+  },
+  {
+    id: "uranium",
+    name: "Uranium",
+    category: "critical",
+    color: "#caff5a",
+    depositModel: "Sandstone-hosted roll-front, unconformity, and surficial calcrete uranium.",
+    hostRocks: ["Permeable sandstone", "Unconformity basement", "Calcrete / valley fill"],
+    geophysics: {
+      gravity: "Subtle basin contrasts.",
+      magnetic: "Basement structure mapping for unconformity targets.",
+      radiometric: "Strong discrete U (eU) radiometric highs.",
+    },
+    geochemistry: { pathfinders: ["U", "V", "Se", "Mo", "Cu", "Ra"] },
+    spectral: ["clayS2", "ironOxideS2", "ndwiWater"].map(recipe),
+    satelliteCues: "Calcrete valley fills, redox fronts (red/grey colour change in sandstone), paleochannels.",
+  },
+  // ---------------- Energy ----------------
+  {
+    id: "oil-gas",
+    name: "Oil & Gas",
+    category: "energy",
+    color: "#ff8a3d",
+    depositModel: "Hydrocarbon trapped in structural/stratigraphic closures; detectable via surface microseepage.",
+    hostRocks: ["Reservoir sandstone/carbonate", "Anticline trap", "Fault closure", "Source shale"],
+    geophysics: {
+      gravity: "Low-density anticline/salt structures; basin gravity lows.",
+      magnetic: "Magnetic depth-to-basement for basin architecture.",
+      radiometric: "Radiometric lows (U/K) over microseepage-altered soils.",
+    },
+    geochemistry: { pathfinders: ["CH4", "C2-C4 gases", "delta-13C", "iodine", "Δ U/K soils"] },
+    spectral: ["thermalHydrocarbon", "clayS2", "ironOxideS2", "ndviStress"].map(recipe),
+    satelliteCues: "Surface bleaching/clay haloes, anticline-cored hills, seepage vegetation anomalies, radiometric lows.",
+  },
+  {
+    id: "geothermal",
+    name: "Geothermal",
+    category: "energy",
+    color: "#ff5a5a",
+    depositModel: "High heat-flow reservoirs along active faults / volcanic centres with surface manifestations.",
+    hostRocks: ["Fractured volcanics", "Fault damage zone", "Silica sinter / travertine"],
+    geophysics: {
+      gravity: "Caldera/structural density contrasts.",
+      magnetic: "Demagnetised hydrothermally altered upflow zones.",
+      radiometric: "K-altered argillic caps.",
+    },
+    geochemistry: { pathfinders: ["B", "Li", "As", "SiO2", "Cl", "He"] },
+    spectral: ["thermalGeo", "clayS2", "asterArgillic", "ndwiWater"].map(recipe),
+    satelliteCues: "Thermal hotspots, hot springs/fumaroles, silica sinter terraces, argillic alteration along faults.",
+  },
+  // ---------------- Groundwater ----------------
+  {
+    id: "groundwater",
+    name: "Groundwater",
+    category: "water",
+    color: "#34d6c8",
+    depositModel: "Aquifers in fractured basement, weathered regolith, and permeable sediments / paleochannels.",
+    hostRocks: ["Fractured basement", "Weathered regolith", "Sandstone aquifer", "Alluvial paleochannel"],
+    geophysics: {
+      gravity: "Sediment thickness / basin-fill contrasts.",
+      magnetic: "Fracture/dyke mapping that controls basement aquifers.",
+      radiometric: "K lows over moist clay-rich recharge zones.",
+    },
+    geochemistry: { pathfinders: ["EC", "TDS", "moisture", "NO3", "Cl"] },
+    spectral: ["ndwiWater", "ndviStress", "thermalGeo"].map(recipe),
+    satelliteCues: "Dambo wetlands, lineament intersections, perennial green vegetation in dry season, paleochannels.",
+  },
+];
+
+export function listCommodities() {
+  return COMMODITIES.map((c) => ({
+    id: c.id,
+    name: c.name,
+    category: c.category,
+    color: c.color,
+    depositModel: c.depositModel,
+    hostRocks: c.hostRocks,
+    geophysics: c.geophysics,
+    geochemistry: c.geochemistry,
+    satelliteCues: c.satelliteCues,
+    spectral: c.spectral.map((s) => ({
+      id: s.id,
+      label: s.label,
+      sensor: s.sensor,
+      rgb: s.rgb || null,
+      expr: s.expr || null,
+      detects: s.detects,
+      palette: s.palette,
+    })),
+  }));
+}
+
+export function getCommodity(id) {
+  return COMMODITIES.find((c) => c.id === id);
+}
+
+export function getCategory(id) {
+  return CATEGORIES.find((c) => c.id === id);
+}
