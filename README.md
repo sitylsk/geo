@@ -96,6 +96,34 @@ analysis as grounding. See `POST /api/documents/parse`.
 | POST | `/api/documents/parse` | Ingest operator documents |
 | POST | `/api/contact` | Pilot scan requests |
 
+## Raster service (real pixels: alteration + potential-field derivatives)
+
+A separate Python microservice (`raster-service/`) processes raster pixels the
+Node app cannot handle natively:
+
+- **Live Sentinel-2 / ASTER alteration band ratios** (iron oxide, ferrous iron,
+  clay/hydroxyl, vegetation stress) from Microsoft Planetary Computer via
+  rasterio. These fold automatically into the prospectivity model as a real
+  alteration layer when the service is running.
+- **Potential-field derivatives** (tilt derivative, analytic signal, total
+  horizontal gradient, vertical derivative, multiscale "worms") computed from an
+  operator-supplied magnetic or gravity **GeoTIFF** - the real airborne-survey
+  workflow.
+
+### Run the raster service
+
+```bash
+cd raster-service
+pip install -r requirements.txt
+python -m uvicorn app:app --host 127.0.0.1 --port 5005
+```
+
+Point the Node app at it with `RASTER_SERVICE_URL=http://127.0.0.1:5005` in
+`.env`. If the service is offline, Anthill keeps working and simply omits the
+alteration layer (graceful fallback). Endpoints: `POST /band-ratios`,
+`POST /derivatives` (upload), `GET /health`; the Node app exposes
+`POST /api/survey-derivatives` as a proxy and reports status in `/api/sources`.
+
 ## Disclaimer
 
 Outputs are for exploration planning only, not verified resource evidence.

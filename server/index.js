@@ -31,6 +31,7 @@ import { geocodePlace } from "./lib/geocode.js";
 import { analyzeOpenAI } from "./lib/ai.js";
 import { validateAgainstDeposits, spatialCrossValidate } from "./lib/validation.js";
 import { logDrillResult, loadDrillResults } from "./lib/drill.js";
+import { rasterHealth, rasterServiceUrl } from "./lib/raster.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -48,7 +49,8 @@ api.get("/health", (_req, res) => {
   res.json({ ok: true, providers: providerStatus(), time: new Date().toISOString() });
 });
 
-api.get("/sources", (_req, res) => {
+api.get("/sources", async (_req, res) => {
+  const raster = await rasterHealth();
   res.json({
     ...listSources(),
     geophysical: GEOPHYSICAL_SOURCES,
@@ -57,13 +59,40 @@ api.get("/sources", (_req, res) => {
     geology: [
       { id: "macrostrat", name: "Macrostrat bedrock geology", type: "Lithology + age map units", agency: "Macrostrat (CC-BY)", use: "Real host-rock favorability per commodity" },
     ],
+    rasterService: {
+      url: rasterServiceUrl(),
+      online: Boolean(raster.ok),
+      capabilities: raster.capabilities || null,
+      provides: [
+        { id: "sentinel2-ratios", name: "Sentinel-2 alteration band ratios", status: raster.ok ? "live" : "service offline", real: true },
+        { id: "aster-ratios", name: "ASTER band ratios", status: raster.ok ? "live" : "service offline", real: true },
+        { id: "potential-field-derivatives", name: "Magnetic/gravity derivatives (tilt, analytic signal, THG, worms) on uploaded survey GeoTIFF", status: raster.ok ? "live" : "service offline", real: true },
+      ],
+    },
     roadmap: [
-      { id: "emag2", name: "EMAG2 magnetic anomaly grids + derivatives (RTP, tilt, worms)", status: "needs raster service" },
-      { id: "gravity", name: "WGM2012 / GOCE gravity anomaly grids", status: "needs raster service" },
-      { id: "radiometrics", name: "Airborne K/U/Th radiometrics", status: "needs raster service" },
-      { id: "hyperspectral", name: "Sentinel-2 / ASTER / EMIT alteration pixels", status: "needs raster service" },
+      { id: "emag2", name: "Global EMAG2 magnetic anomaly auto-fetch", status: "needs reliable open grid source" },
+      { id: "gravity", name: "Global gravity anomaly auto-fetch", status: "needs reliable open grid source" },
+      { id: "radiometrics", name: "Airborne K/U/Th radiometrics (regional coverage)", status: "coverage-dependent" },
     ],
   });
+});
+
+api.post("/survey-derivatives", express.raw({ type: "*/*", limit: "60mb" }), async (req, res) => {
+  try {
+    const fieldType = req.query.fieldType || "magnetic";
+    const size = req.query.size || "40";
+    const form = new FormData();
+    form.append("file", new Blob([req.body]), req.query.filename || "survey.tif");
+    const r = await fetch(`${rasterServiceUrl()}/derivatives?field_type=${fieldType}&size=${size}`, {
+      method: "POST",
+      body: form,
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!r.ok) return res.status(502).json({ error: "Raster service error", status: r.status });
+    res.json(await r.json());
+  } catch (err) {
+    res.status(502).json({ error: `Raster service unreachable: ${err.message}` });
+  }
 });
 
 api.get("/methods", (_req, res) => {

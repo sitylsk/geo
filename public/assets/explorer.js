@@ -246,7 +246,10 @@ function renderResults(result, ai) {
   }
   if (result.dataDriven) {
     const dc = result.dataConfidence || {};
-    html += `<div class="coverage-badge data-badge">Data-driven model · DEM ${dc.dem ? "live" : "n/a"} · geology ${dc.geology || 0} pts · ${dc.knownDeposits || 0} known deposits · ${dc.seismic || 0} seismic${dc.drillHits ? ` · ${dc.drillHits} drill hit(s)` : ""}</div>`;
+    html += `<div class="coverage-badge data-badge">Data-driven model · DEM ${dc.dem ? "live" : "n/a"} · geology ${dc.geology || 0} pts · ${dc.knownDeposits || 0} known deposits · ${dc.seismic || 0} seismic${dc.alteration ? " · Sentinel-2 alteration" : ""}${dc.drillHits ? ` · ${dc.drillHits} drill hit(s)` : ""}</div>`;
+  }
+  if (result.alteration?.scene) {
+    html += `<div class="coverage-badge" style="border-color:rgba(255,138,61,0.4);color:#ffba85;background:rgba(255,138,61,0.07)">Live alteration: ${escapeHtml(result.alteration.source)} scene ${escapeHtml(String(result.alteration.scene)).slice(0,22)}... (${(result.alteration.cloud||0).toFixed(1)}% cloud)</div>`;
   }
   if (result.hostRock) {
     html += `<div class="hostrock-card"><div class="hr-top"><span>Host rock (real geology)</span><b>${Math.round(result.hostRock.score * 100)}% match</b></div><div class="hr-meta">${escapeHtml(result.hostRock.lith || "")}${result.hostRock.age ? " &middot; " + escapeHtml(result.hostRock.age) : ""}</div><div class="hr-note">${escapeHtml(result.hostRock.note || "")}</div></div>`;

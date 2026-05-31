@@ -277,6 +277,8 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
         tectonicSetting: scoreLabel(realProspectivity.tectonicScore ?? 0.3),
         hostRock: scoreLabel(realProspectivity.geologyFavorability?.score ?? 0.5),
       };
+      const ag = realProspectivity.alteration;
+      if (ag && realProspectivity.dataConfidence?.alteration) realEvidence.alteration = "Mapped (Sentinel-2)";
     }
 
     return {
@@ -315,6 +317,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     dataDriven: Boolean(realProspectivity),
     dataConfidence: realProspectivity?.dataConfidence || null,
     hostRock: realProspectivity?.geologyFavorability || null,
+    alteration: realProspectivity?.alteration || null,
     realScoreGrid: realProspectivity?.scoreGrid || null,
     commodity: {
       id: commodity.id,
