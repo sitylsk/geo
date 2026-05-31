@@ -36,7 +36,11 @@ export function publicEngineResult(result) {
       confidence: t.confidence,
       radiusKm: t.radiusKm,
       tier: t.tier,
+      realEvidence: t.realEvidence || null,
     })),
+    dataDriven: Boolean(result.dataDriven),
+    dataConfidence: result.dataConfidence || null,
+    validation: result.validation || null,
     generatedAt: result.generatedAt,
   };
 

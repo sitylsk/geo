@@ -82,7 +82,7 @@ function fieldValue(rng, nx, ny, octaves = 3) {
   return (v / total) * 0.5 + 0.5; // 0..1
 }
 
-export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, deepScan = false, xrayScan = false, lbandContext = null, geophysicalContext = null }) {
+export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, deepScan = false, xrayScan = false, lbandContext = null, geophysicalContext = null, prospectivityContext = null }) {
   const commodity = getCommodity(commodityId);
   if (!commodity) throw new Error(`Unknown commodity: ${commodityId}`);
   const bounds = normaliseAoi(aoi);
@@ -173,6 +173,20 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     }
   }
 
+  // Blend the REAL prospectivity score (DEM ruggedness, known-deposit
+  // proximity, seismicity, tectonics) so targets are data-driven. The synthetic
+  // field is retained only as a small spatial-texture term.
+  let realProspectivity = null;
+  if (prospectivityContext?.scoreGrid?.length === gridSize) {
+    realProspectivity = prospectivityContext;
+    const rg = prospectivityContext.scoreGrid;
+    for (let j = 0; j < gridSize; j++) {
+      for (let i = 0; i < gridSize; i++) {
+        grid[j][i] = Number(clamp(rg[j][i] * 0.7 + grid[j][i] * 0.3, 0, 1).toFixed(4));
+      }
+    }
+  }
+
   let subsurfaceGrid = null;
   if (useDeep) {
     subsurfaceGrid = buildSubsurfaceGrid(gridSize, seed, lbandContext);
@@ -249,6 +263,21 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     const pathfinders = commodity.geochemistry.pathfinders;
     const pf = pathfinders[Math.floor(tr() * pathfinders.length)];
 
+    // Real-data evidence at this cell (only when prospectivity context exists).
+    let realEvidence = null;
+    if (realProspectivity) {
+      const cc = realProspectivity.coarse;
+      const ci = Math.round((c.i / (gridSize - 1)) * (cc - 1));
+      const cj = Math.round((c.j / (gridSize - 1)) * (cc - 1));
+      const comp = realProspectivity.componentsCoarse;
+      realEvidence = {
+        structuralComplexity: scoreLabel(comp.ruggedness?.[cj]?.[ci] ?? 0.5),
+        knownDepositProximity: scoreLabel(comp.depositProximity?.[cj]?.[ci] ?? 0),
+        seismicPlumbing: scoreLabel(comp.seismic?.[cj]?.[ci] ?? 0.3),
+        tectonicSetting: scoreLabel(realProspectivity.tectonicScore ?? 0.3),
+      };
+    }
+
     return {
       id: `T-${idx + 1}`,
       rank: idx + 1,
@@ -258,6 +287,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
       radiusKm: Number(radiusKm.toFixed(2)),
       tier: confidence > 0.8 ? "A" : confidence > 0.65 ? "B" : "C",
       evidence,
+      realEvidence,
       anomaly: `Coincident ${evidence.geochem.toLowerCase()} ${pf} geochem + ${evidence.magnetic.toLowerCase()} magnetic + ${evidence.spectral.toLowerCase()} spectral response`,
       recommendedAction:
         confidence > 0.8
@@ -281,6 +311,9 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     subsurfaceGrid,
     geophysicalStack,
     xrayScan: Boolean(xrayScan),
+    dataDriven: Boolean(realProspectivity),
+    dataConfidence: realProspectivity?.dataConfidence || null,
+    realScoreGrid: realProspectivity?.scoreGrid || null,
     commodity: {
       id: commodity.id,
       name: commodity.name,

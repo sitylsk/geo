@@ -11,6 +11,7 @@
 
 import { knowledgeFor } from "./knowledge.js";
 import { activeMethods, availableToAdd } from "./remote-methods.js";
+import { mineralSystemFor, UNIVERSAL_HEURISTICS } from "./geo-expertise.js";
 
 function pct(x) {
   return `${Math.round((x || 0) * 100)}%`;
@@ -90,6 +91,7 @@ export function buildSynthesis({ engineResult, intel, aoiLabel, documents = [] }
   const c = engineResult.commodity;
   const targets = engineResult.targets || [];
   const knowledge = knowledgeFor(c.id);
+  const ms = mineralSystemFor(c.id);
   const intelLines = summariseIntel(intel) || [];
   const geobotany = geobotanySection(knowledge);
   const top = targets[0];
@@ -141,6 +143,33 @@ export function buildSynthesis({ engineResult, intel, aoiLabel, documents = [] }
     );
   }
 
+  if (ms) {
+    sections.mineralSystem = bullet([
+      `Source: ${ms.source}`,
+      `Pathway: ${ms.pathway}`,
+      `Trap / throttle: ${ms.trap}`,
+      `Preservation: ${ms.preservation}`,
+      `Detection footprint: ${ms.detection}`,
+    ]);
+    sections.vectoringRules = bullet(ms.vectoringRules);
+  }
+
+  sections.geologistHeuristics = bullet(UNIVERSAL_HEURISTICS.slice(0, 6));
+
+  if (engineResult.dataDriven) {
+    const dc = engineResult.dataConfidence || {};
+    const v = engineResult.validation;
+    const lines = [
+      `Targets are data-driven from real inputs: digital elevation model (${dc.dem ? "live" : "n/a"}), ${dc.knownDeposits || 0} known deposit(s) for nearology, ${dc.seismic || 0} seismic event(s), tectonic setting ${dc.tectonic ? "resolved" : "regional"}.`,
+    ];
+    if (v?.available) {
+      lines.push(`Model validation against known deposits: AUC ${v.auc}; captures ${Math.round((v.captureEfficiency.top10pct || 0) * 100)}% of known deposits in the top 10% of ranked ground (${v.knownDeposits} positives). ${v.interpretation}`);
+    } else if (v) {
+      lines.push(`Validation: ${v.reason}`);
+    }
+    sections.modelEvidence = bullet(lines);
+  }
+
   sections.fieldProgram = bullet([
     top ? `Stage 1: ground-truth ${top.id} with an indicator-species walkover and portable XRF soil traverse across the modelled halo.` : "Stage 1: reconnaissance mapping over the highest-ranked cells.",
     "Stage 2: orientation soil/stream-sediment geochemistry on the pathfinder suite; confirm spectral and biogeochemical anomalies.",
@@ -164,6 +193,14 @@ export function buildSynthesis({ engineResult, intel, aoiLabel, documents = [] }
     "## Deposit model and controls",
     sections.depositModel,
     "",
+    ms ? "## Mineral system (source, pathway, trap, preservation, detection)" : "",
+    ms ? sections.mineralSystem : "",
+    ms ? "## Expert vectoring rules" : "",
+    ms ? sections.vectoringRules : "",
+    "## Geologist heuristics applied",
+    sections.geologistHeuristics,
+    engineResult.dataDriven ? "## Model evidence and validation" : "",
+    engineResult.dataDriven ? sections.modelEvidence : "",
     "## Classic and biogeochemical indicators",
     sections.classicIndicators,
     "",

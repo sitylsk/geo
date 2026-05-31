@@ -539,3 +539,14 @@
 .final-card p { font-size: 12.5px; margin: 4px 0; color: var(--muted); }
 .brief-trow { display: flex; gap: 8px; font-size: 11.5px; padding: 3px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .brief-trow span { color: var(--text); }
+
+.data-badge { border-color: rgba(46, 207, 111, 0.4); background: rgba(46, 207, 111, 0.08); color: #7fe3a6; }
+.validation-card { background: rgba(46,207,111,0.06); border: 1px solid rgba(46,207,111,0.3); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+.validation-card .vrow { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+.validation-card .vrow b { color: #7fe3a6; }
+.vbar { height: 6px; background: #0a1424; border-radius: 4px; overflow: hidden; margin-bottom: 6px; }
+.vbar i { display: block; height: 100%; background: linear-gradient(90deg, #2ecf6f, #7fe3a6); }
+.vmeta { font-size: 11.5px; color: var(--muted); }
+.vcaveat { font-size: 10.5px; color: var(--muted-2); margin-top: 6px; font-style: italic; }
+.ev-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.ev-chip { font-size: 10px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); color: var(--muted); }

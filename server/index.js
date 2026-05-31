@@ -25,6 +25,8 @@ import {
   GEOPHYSICAL_SOURCES,
 } from "./lib/geophysical.js";
 import { listRemoteMethods, activeMethods, availableToAdd } from "./lib/remote-methods.js";
+import { buildRealProspectivity } from "./lib/prospectivity.js";
+import { validateAgainstDeposits } from "./lib/validation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -117,19 +119,29 @@ async function buildGeophysicalContext(bounds, gridSize, xrayScan) {
   return { stac, thermal, magnetic, gravity };
 }
 
-async function runScanEngine(body) {
+async function runScanEngine(body, sharedIntel) {
   const { commodityId, aoi, gridSize, maxTargets, deepScan, xrayScan } = body || {};
   const bounds = normaliseAoi(aoi);
   const gs = clampInt(gridSize, 16, 64, 36);
   const useXray = Boolean(xrayScan);
   const useDeep = Boolean(deepScan) || useXray;
 
-  const [lbandContext, geophysicalContext] = await Promise.all([
+  let intel = sharedIntel;
+  if (!intel) {
+    try {
+      intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm: aoi?.radiusKm });
+    } catch {
+      intel = null;
+    }
+  }
+
+  const [lbandContext, geophysicalContext, prospectivityContext] = await Promise.all([
     useDeep ? queryFullGeophysicalStack(bounds) : null,
     buildGeophysicalContext(bounds, gs, useXray),
+    buildRealProspectivity({ bounds, gridSize: gs, commodityId, intel }).catch(() => null),
   ]);
 
-  return runEngine({
+  const result = runEngine({
     commodityId,
     aoi,
     gridSize: gs,
@@ -138,7 +150,14 @@ async function runScanEngine(body) {
     xrayScan: useXray,
     lbandContext: lbandContext || null,
     geophysicalContext,
+    prospectivityContext,
   });
+
+  if (result.realScoreGrid && intel) {
+    const deposits = (intel.deposits?.mrdsNearby || []).concat(intel.deposits?.globalSurvey?.nearby || []);
+    result.validation = validateAgainstDeposits({ scoreGrid: result.realScoreGrid, bounds, deposits });
+  }
+  return { result, intel };
 }
 
 api.post("/scan", async (req, res) => {
@@ -147,7 +166,7 @@ api.post("/scan", async (req, res) => {
     if (!getCommodity(commodityId)) {
       return res.status(400).json({ error: `Unknown commodityId: ${commodityId}` });
     }
-    const result = await runScanEngine(req.body);
+    const { result } = await runScanEngine(req.body);
     res.json(publicEngineResult(result));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -160,14 +179,7 @@ api.post("/analyze", async (req, res) => {
     if (!getCommodity(commodityId)) {
       return res.status(400).json({ error: `Unknown commodityId: ${commodityId}` });
     }
-    const engineResult = await runScanEngine(req.body);
-    // Ground the analysis with live regional intelligence.
-    let intel = null;
-    try {
-      intel = await gatherRegionalIntelligence({ aoi, commodityId, radiusKm: aoi?.radiusKm });
-    } catch {
-      /* intel optional */
-    }
+    const { result: engineResult, intel } = await runScanEngine(req.body);
     const ai = await runPipeline(engineResult, { aoiLabel, intel, documents });
     res.json({ engine: publicEngineResult(engineResult), ai: publicAiResult(ai), intel });
   } catch (err) {

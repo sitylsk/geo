@@ -243,6 +243,20 @@ function renderResults(result, ai) {
   } else if (result.deepScan?.active) {
     html += `<div class="coverage-badge">L-band deep scan · ${result.deepScan.palsarScenes} PALSAR scene(s) · ${result.deepScan.penetration}</div>`;
   }
+  if (result.dataDriven) {
+    const dc = result.dataConfidence || {};
+    html += `<div class="coverage-badge data-badge">Data-driven model · DEM ${dc.dem ? "live" : "n/a"} · ${dc.knownDeposits || 0} known deposits · ${dc.seismic || 0} seismic</div>`;
+  }
+  if (result.validation?.available) {
+    const v = result.validation;
+    html += `<div class="validation-card"><div class="vrow"><span>Model validation (known deposits)</span><b>AUC ${v.auc}</b></div>`;
+    html += `<div class="vbar"><i style="width:${Math.round(v.auc * 100)}%"></i></div>`;
+    html += `<div class="vmeta">Captures ${Math.round((v.captureEfficiency.top10pct || 0) * 100)}% of known deposits in top 10% of ranked ground (${v.knownDeposits} positives).</div>`;
+    if (v.caveat) html += `<div class="vcaveat">${v.caveat}</div>`;
+    html += `</div>`;
+  } else if (result.validation) {
+    html += `<div class="coverage-badge">Validation: ${result.validation.reason}</div>`;
+  }
 
   html += `<div class="section-label">Ranked targets</div>`;
   result.targets.forEach((t) => {
@@ -250,6 +264,7 @@ function renderResults(result, ai) {
       <div class="ti-head"><span class="tid">${t.id}</span><span class="tier ${t.tier}">Priority ${t.tier} · ${(t.confidence * 100).toFixed(0)}%</span></div>
       <div class="conf-bar"><i style="width:${t.confidence * 100}%"></i></div>
       <div class="meta">${t.lat.toFixed(4)}, ${t.lng.toFixed(4)} · halo ~${t.radiusKm} km</div>
+      ${t.realEvidence ? `<div class="ev-chips">${Object.entries(t.realEvidence).map(([k, val]) => `<span class="ev-chip" title="${k}">${labelEv(k)}: ${val}</span>`).join("")}</div>` : ""}
     </div>`;
   });
 
@@ -290,6 +305,10 @@ function renderBrief(md) {
   }
   if (inList) out += "</ul>";
   return out;
+}
+
+function labelEv(k) {
+  return ({ structuralComplexity: "Structure", knownDepositProximity: "Nearby deposits", seismicPlumbing: "Seismic", tectonicSetting: "Tectonic" })[k] || k;
 }
 
 function escapeHtml(s) {
