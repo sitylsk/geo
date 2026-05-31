@@ -12,6 +12,9 @@
 // Each cell carries the contribution of every component, so a target can be
 // explained the way a geologist would justify it.
 
+import { fetchGeologyGrid, geologyFavorability } from "./integrations/geology.js";
+import { drillFeedbackForBounds } from "./drill.js";
+
 const ELEVATION_URL = "https://api.open-meteo.com/v1/elevation";
 
 function clamp(v, lo, hi) {
@@ -124,14 +127,21 @@ function proximityGrid(bounds, n, points, decayKm) {
  */
 export async function buildSharedContext({ bounds, gridSize, intel }) {
   const coarse = Math.min(gridSize, 16);
-  const elev = await fetchElevationGrid(bounds, coarse);
+  const [elev, geology] = await Promise.all([
+    fetchElevationGrid(bounds, coarse),
+    fetchGeologyGrid(bounds, 3).catch(() => null),
+  ]);
   const rug = ruggednessGrid(elev, coarse);
 
-  const deposits = (intel?.deposits?.mrdsNearby || []).concat(intel?.deposits?.globalSurvey?.nearby || []);
+  const baseDeposits = (intel?.deposits?.mrdsNearby || []).concat(intel?.deposits?.globalSurvey?.nearby || []);
+  const drill = drillFeedbackForBounds(bounds);
+  // Confirmed drill hits act as strong extra positives.
+  const deposits = baseDeposits.concat(drill.hits.map((h) => ({ name: "Confirmed drill hit", commodity: "drill", lat: h.lat, lng: h.lng })));
   const eqEvents = (intel?.seismic?.iris?.events || []).concat(intel?.usgs?.earthquakes?.events || []);
   const aoiKm = Math.max((bounds.maxLat - bounds.minLat) * 111, 20);
 
   const depositProx = proximityGrid(bounds, coarse, deposits, Math.max(aoiKm * 0.15, 8));
+  const missProx = proximityGrid(bounds, coarse, drill.misses, Math.max(aoiKm * 0.08, 4));
   const seismicProx = proximityGrid(bounds, coarse, eqEvents, Math.max(aoiKm * 0.25, 25));
 
   const tb = intel?.tectonics?.nearestBoundary;
@@ -146,11 +156,17 @@ export async function buildSharedContext({ bounds, gridSize, intel }) {
     seismicProx,
     tectonicScore,
     deposits,
+    missProx,
+    drill,
+    geology,
     dataConfidence: {
       dem: rug.hasData,
       knownDeposits: depositProx.hasData ? deposits.length : 0,
       seismic: eqEvents.length,
       tectonic: Boolean(tb),
+      geology: geology?.coverage || 0,
+      drillHits: drill.hits.length,
+      drillMisses: drill.misses.length,
     },
   };
 }
@@ -159,6 +175,7 @@ export async function buildSharedContext({ bounds, gridSize, intel }) {
 export function scoreFromContext(ctx, commodityId, weights) {
   const { coarse, rug, depositProx, seismicProx, tectonicScore } = ctx;
   const w = weights || defaultWeights(commodityId);
+  const geoFav = geologyFavorability(commodityId, ctx.geology);
   const score = Array.from({ length: coarse }, () => new Array(coarse).fill(0));
   const components = { ruggedness: rug.grid, depositProximity: depositProx.grid, seismic: seismicProx.grid };
   for (let j = 0; j < coarse; j++) {
@@ -166,7 +183,16 @@ export function scoreFromContext(ctx, commodityId, weights) {
       const rugV = rug.hasData ? rug.grid[j][i] : 0.5;
       const depV = depositProx.hasData ? depositProx.grid[j][i] : 0;
       const seisV = seismicProx.hasData ? seismicProx.grid[j][i] : 0.3;
-      score[j][i] = rugV * w.structure + depV * w.deposits + seisV * w.seismic + tectonicScore * w.tectonic;
+      let cell =
+        rugV * w.structure +
+        depV * w.deposits +
+        seisV * w.seismic +
+        tectonicScore * w.tectonic +
+        geoFav.score * w.geology;
+      // Drill misses damp their immediate surroundings (informative negatives).
+      const miss = ctx.missProx?.hasData ? ctx.missProx.grid[j][i] : 0;
+      cell *= 1 - 0.5 * miss;
+      score[j][i] = cell;
     }
   }
   return {
@@ -174,6 +200,7 @@ export function scoreFromContext(ctx, commodityId, weights) {
     scoreGrid: upsample(normalise(score), ctx.gridSize),
     componentsCoarse: components,
     tectonicScore,
+    geologyFavorability: geoFav,
     dataConfidence: ctx.dataConfidence,
     weights: w,
   };
@@ -188,12 +215,12 @@ export async function buildRealProspectivity({ bounds, gridSize, commodityId, in
 }
 
 function defaultWeights(commodityId) {
-  // Structure-dominant for most hard-rock; deposit nearology always strong.
-  const base = { structure: 0.3, deposits: 0.4, seismic: 0.15, tectonic: 0.15 };
-  if (commodityId === "diamond") return { structure: 0.25, deposits: 0.35, seismic: 0.1, tectonic: 0.3 };
-  if (commodityId === "geothermal") return { structure: 0.25, deposits: 0.2, seismic: 0.35, tectonic: 0.2 };
-  if (commodityId === "ree") return { structure: 0.2, deposits: 0.35, seismic: 0.15, tectonic: 0.3 };
-  if (commodityId === "groundwater") return { structure: 0.45, deposits: 0.1, seismic: 0.2, tectonic: 0.25 };
+  // Structure + real host-rock geology + deposit nearology drive the score.
+  const base = { structure: 0.22, deposits: 0.32, seismic: 0.12, tectonic: 0.12, geology: 0.22 };
+  if (commodityId === "diamond") return { structure: 0.2, deposits: 0.28, seismic: 0.08, tectonic: 0.24, geology: 0.2 };
+  if (commodityId === "geothermal") return { structure: 0.2, deposits: 0.16, seismic: 0.28, tectonic: 0.16, geology: 0.2 };
+  if (commodityId === "ree") return { structure: 0.16, deposits: 0.28, seismic: 0.12, tectonic: 0.24, geology: 0.2 };
+  if (commodityId === "groundwater") return { structure: 0.36, deposits: 0.08, seismic: 0.16, tectonic: 0.2, geology: 0.2 };
   return base;
 }
 

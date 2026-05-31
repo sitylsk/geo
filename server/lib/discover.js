@@ -125,6 +125,7 @@ export async function discoverAtLocation({ lat, lng, radiusKm = 80, label }) {
   const ranked = listCommodities().map((c) => {
     const scored = scoreFromContext(ctx, c.id);
     const peak = topCell(scored.scoreGrid);
+    const geoFav = scored.geologyFavorability;
     const documentedCount = documented[c.id] || 0;
     const suit = settingSuitability(c.id, env);
     const prior = BASE_PRIOR[c.id] ?? 0.6;
@@ -144,7 +145,8 @@ export async function discoverAtLocation({ lat, lng, radiusKm = 80, label }) {
         lat: Number((bounds.minLat + peak.j * latPerCell).toFixed(5)),
         lng: Number((bounds.minLng + peak.i * lngPerCell).toFixed(5)),
       },
-      rationale: rationale(c.id, documentedCount, ctx.dataConfidence),
+      hostRock: geoFav ? { score: geoFav.score, note: geoFav.note, lith: geoFav.dominantLith, age: geoFav.dominantAge } : null,
+      rationale: rationale(c.id, documentedCount, ctx.dataConfidence, geoFav),
     };
   });
 
@@ -161,10 +163,12 @@ export async function discoverAtLocation({ lat, lng, radiusKm = 80, label }) {
   };
 }
 
-function rationale(commodityId, documentedCount, dc) {
+function rationale(commodityId, documentedCount, dc, geoFav) {
   const ms = mineralSystemFor(commodityId);
   const bits = [];
   if (documentedCount > 0) bits.push(`${documentedCount} documented occurrence(s) nearby`);
+  if (geoFav && geoFav.matched && geoFav.matched.length) bits.push(`host rock favourable (${geoFav.dominantLith || "mapped units"}, ${geoFav.dominantAge || "age n/a"})`);
+  else if (geoFav && geoFav.dominantLith) bits.push(`host rock ${geoFav.dominantLith}`);
   if (dc?.dem) bits.push("structural setting from real terrain");
   if (dc?.tectonic) bits.push("tectonic context resolved");
   if (ms) bits.push(ms.detection.split(";")[0].toLowerCase());

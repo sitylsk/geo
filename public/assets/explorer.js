@@ -246,13 +246,19 @@ function renderResults(result, ai) {
   }
   if (result.dataDriven) {
     const dc = result.dataConfidence || {};
-    html += `<div class="coverage-badge data-badge">Data-driven model · DEM ${dc.dem ? "live" : "n/a"} · ${dc.knownDeposits || 0} known deposits · ${dc.seismic || 0} seismic</div>`;
+    html += `<div class="coverage-badge data-badge">Data-driven model · DEM ${dc.dem ? "live" : "n/a"} · geology ${dc.geology || 0} pts · ${dc.knownDeposits || 0} known deposits · ${dc.seismic || 0} seismic${dc.drillHits ? ` · ${dc.drillHits} drill hit(s)` : ""}</div>`;
+  }
+  if (result.hostRock) {
+    html += `<div class="hostrock-card"><div class="hr-top"><span>Host rock (real geology)</span><b>${Math.round(result.hostRock.score * 100)}% match</b></div><div class="hr-meta">${escapeHtml(result.hostRock.lith || "")}${result.hostRock.age ? " &middot; " + escapeHtml(result.hostRock.age) : ""}</div><div class="hr-note">${escapeHtml(result.hostRock.note || "")}</div></div>`;
   }
   if (result.validation?.available) {
     const v = result.validation;
     html += `<div class="validation-card"><div class="vrow"><span>Model validation (known deposits)</span><b>AUC ${v.auc}</b></div>`;
     html += `<div class="vbar"><i style="width:${Math.round(v.auc * 100)}%"></i></div>`;
     html += `<div class="vmeta">Captures ${Math.round((v.captureEfficiency.top10pct || 0) * 100)}% of known deposits in top 10% of ranked ground (${v.knownDeposits} positives).</div>`;
+    if (result.spatialValidation?.available) {
+      html += `<div class="vmeta" style="margin-top:6px">Spatial hold-out AUC <b>${result.spatialValidation.spatialAuc}</b> across ${result.spatialValidation.folds} blocks (more honest than in-sample).</div>`;
+    }
     if (v.caveat) html += `<div class="vcaveat">${v.caveat}</div>`;
     html += `</div>`;
   } else if (result.validation) {

@@ -275,6 +275,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
         knownDepositProximity: scoreLabel(comp.depositProximity?.[cj]?.[ci] ?? 0),
         seismicPlumbing: scoreLabel(comp.seismic?.[cj]?.[ci] ?? 0.3),
         tectonicSetting: scoreLabel(realProspectivity.tectonicScore ?? 0.3),
+        hostRock: scoreLabel(realProspectivity.geologyFavorability?.score ?? 0.5),
       };
     }
 
@@ -313,6 +314,7 @@ export function runEngine({ commodityId, aoi, gridSize = 36, maxTargets = 6, dee
     xrayScan: Boolean(xrayScan),
     dataDriven: Boolean(realProspectivity),
     dataConfidence: realProspectivity?.dataConfidence || null,
+    hostRock: realProspectivity?.geologyFavorability || null,
     realScoreGrid: realProspectivity?.scoreGrid || null,
     commodity: {
       id: commodity.id,

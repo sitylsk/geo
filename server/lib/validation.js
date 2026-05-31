@@ -81,3 +81,51 @@ function sampleArray(arr, k) {
   for (let i = 0; i < k; i++) out.push(arr[Math.floor(i * step)]);
   return out;
 }
+
+// Spatial hold-out cross-validation: split the AOI into quadrant blocks, hold
+// each out in turn, and measure how well the rest of the score grid ranks the
+// held-out deposits. This avoids the in-sample optimism of a single AUC because
+// the test deposits sit in a region not used to set the score there.
+export function spatialCrossValidate({ scoreGrid, bounds, deposits }) {
+  const pts = (deposits || [])
+    .filter((d) => typeof d.lat === "number" && typeof d.lng === "number")
+    .map((d) => {
+      const fx = (d.lng - bounds.minLng) / (bounds.maxLng - bounds.minLng || 1);
+      const fy = (d.lat - bounds.minLat) / (bounds.maxLat - bounds.minLat || 1);
+      return { fx, fy, score: scoreAtPoint(scoreGrid, bounds, d.lat, d.lng) };
+    })
+    .filter((p) => p.score != null && p.fx >= 0 && p.fx <= 1 && p.fy >= 0 && p.fy <= 1);
+
+  if (pts.length < 4) {
+    return { available: false, reason: "Need >=4 known deposits across the area for spatial cross-validation." };
+  }
+
+  // Quadrant blocks.
+  const blockOf = (p) => (p.fx < 0.5 ? 0 : 1) + (p.fy < 0.5 ? 0 : 2);
+  const n = scoreGrid.length;
+  const cellBlock = (i, j) => (i < n / 2 ? 0 : 1) + (j < n / 2 ? 0 : 2);
+
+  const foldAucs = [];
+  for (let b = 0; b < 4; b++) {
+    const test = pts.filter((p) => blockOf(p) === b);
+    if (!test.length) continue;
+    // Background = cells NOT in the held-out block (the "trained" region).
+    const bg = [];
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) if (cellBlock(i, j) !== b) bg.push(scoreGrid[j][i]);
+    if (!bg.length) continue;
+    const sample = bg.length > 400 ? bg.filter((_, k) => k % Math.ceil(bg.length / 400) === 0) : bg;
+    let wins = 0;
+    let comp = 0;
+    for (const p of test) for (const v of sample) { comp++; if (p.score > v) wins++; else if (p.score === v) wins += 0.5; }
+    if (comp) foldAucs.push(wins / comp);
+  }
+  if (!foldAucs.length) return { available: false, reason: "Deposits not distributed across enough blocks." };
+  const mean = foldAucs.reduce((a, b) => a + b, 0) / foldAucs.length;
+  return {
+    available: true,
+    folds: foldAucs.length,
+    spatialAuc: Number(mean.toFixed(3)),
+    perFold: foldAucs.map((x) => Number(x.toFixed(3))),
+    interpretation: `Spatial hold-out AUC ${mean.toFixed(3)} across ${foldAucs.length} blocks (test deposits excluded from their own region). More honest than in-sample AUC.`,
+  };
+}

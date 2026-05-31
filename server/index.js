@@ -29,7 +29,8 @@ import { buildRealProspectivity } from "./lib/prospectivity.js";
 import { discoverAtLocation } from "./lib/discover.js";
 import { geocodePlace } from "./lib/geocode.js";
 import { analyzeOpenAI } from "./lib/ai.js";
-import { validateAgainstDeposits } from "./lib/validation.js";
+import { validateAgainstDeposits, spatialCrossValidate } from "./lib/validation.js";
+import { logDrillResult, loadDrillResults } from "./lib/drill.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "..", "public");
@@ -53,6 +54,15 @@ api.get("/sources", (_req, res) => {
     geophysical: GEOPHYSICAL_SOURCES,
     integrations: listIntegrations(),
     remoteMethods: listRemoteMethods(),
+    geology: [
+      { id: "macrostrat", name: "Macrostrat bedrock geology", type: "Lithology + age map units", agency: "Macrostrat (CC-BY)", use: "Real host-rock favorability per commodity" },
+    ],
+    roadmap: [
+      { id: "emag2", name: "EMAG2 magnetic anomaly grids + derivatives (RTP, tilt, worms)", status: "needs raster service" },
+      { id: "gravity", name: "WGM2012 / GOCE gravity anomaly grids", status: "needs raster service" },
+      { id: "radiometrics", name: "Airborne K/U/Th radiometrics", status: "needs raster service" },
+      { id: "hyperspectral", name: "Sentinel-2 / ASTER / EMIT alteration pixels", status: "needs raster service" },
+    ],
   });
 });
 
@@ -159,6 +169,7 @@ async function runScanEngine(body, sharedIntel) {
   if (result.realScoreGrid && intel) {
     const deposits = (intel.deposits?.mrdsNearby || []).concat(intel.deposits?.globalSurvey?.nearby || []);
     result.validation = validateAgainstDeposits({ scoreGrid: result.realScoreGrid, bounds, deposits });
+    result.spatialValidation = spatialCrossValidate({ scoreGrid: result.realScoreGrid, bounds, deposits });
   }
   return { result, intel };
 }
@@ -232,6 +243,19 @@ api.post("/discover", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+api.post("/drill", (req, res) => {
+  const { commodityId, lat, lng, outcome } = req.body || {};
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return res.status(400).json({ error: "lat and lng required" });
+  }
+  const rec = logDrillResult({ commodityId, lat, lng, outcome, grade: req.body?.grade, note: req.body?.note });
+  res.json({ ok: true, hole: rec, totalLogged: loadDrillResults().length });
+});
+
+api.get("/drill", (req, res) => {
+  res.json({ holes: loadDrillResults(req.query.commodityId) });
 });
 
 api.post("/contact", (req, res) => {
