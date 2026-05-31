@@ -7,6 +7,7 @@ const state = {
   lastResult: null,
   lastAi: null,
   documents: [],
+  lastDiscovery: null,
   heatOverlay: null,
   aoiRect: null,
   targetLayer: null,
@@ -354,6 +355,92 @@ if (docInput) {
   });
 }
 
+
+/* ---- "What is here" multi-resource discovery ---- */
+let discoverMarkers = null;
+
+const CAT_COLORS = { precious: "#f5c542", base: "#4fb0ff", gemstone: "#ff6fd8", critical: "#9b8cff", energy: "#ff8a3d", water: "#34d6c8" };
+
+async function runDiscover() {
+  const place = $("discover-place").value.trim();
+  if (!place) { setStatus("Type a place first"); return; }
+  setStatus(`Discovering what is at ${place} (web search, up to ~1 min)...`, true);
+  try {
+    const res = await fetch("/api/discover", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ place }),
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || "Discovery failed");
+    state.lastDiscovery = d;
+    $("lat").value = d.location.lat.toFixed(4);
+    $("lng").value = d.location.lng.toFixed(4);
+    drawAoiPreview();
+    map.flyTo([d.location.lat, d.location.lng], 8, { duration: 0.8 });
+    plotDiscovery(d);
+    renderDiscovery(d);
+    setStatus(`${d.topResources.length || d.ranked.length} resources assessed at ${d.location.label}`);
+    setTimeout(() => setStatus(""), 4000);
+  } catch (err) {
+    setStatus(`Error: ${err.message}`);
+  }
+}
+
+function plotDiscovery(d) {
+  if (discoverMarkers) map.removeLayer(discoverMarkers);
+  discoverMarkers = L.layerGroup();
+  (d.ranked || []).filter((r) => r.confidence >= 0.5).slice(0, 8).forEach((r) => {
+    const color = CAT_COLORS[r.category] || r.color || "#34d6c8";
+    L.circleMarker([r.point.lat, r.point.lng], {
+      radius: 6 + r.confidence * 8,
+      color: "#fff", weight: 1.5, fillColor: color, fillOpacity: 0.85,
+    }).addTo(discoverMarkers)
+      .bindTooltip(`${r.name} ${(r.confidence * 100).toFixed(0)}%`, { permanent: false, direction: "top" });
+  });
+  discoverMarkers.addTo(map);
+}
+
+function renderDiscovery(d) {
+  openResults();
+  $("results-toggle").classList.remove("hidden");
+  const body = $("results-body");
+  let html = `<div class="summary-card">
+    <div class="row"><span>Location</span><b>${escapeHtml(d.location.label)}</b></div>
+    <div class="row"><span>Coordinates</span><b>${d.location.lat.toFixed(4)}, ${d.location.lng.toFixed(4)}</b></div>
+    <div class="row"><span>Known occurrences</span><b>${d.knownDeposits.length}</b></div>
+  </div>`;
+
+  html += `<div class="section-label">What is most likely here</div>`;
+  (d.ranked || []).slice(0, 8).forEach((r) => {
+    const color = CAT_COLORS[r.category] || r.color;
+    html += `<div class="disc-item" data-lat="${r.point.lat}" data-lng="${r.point.lng}">
+      <div class="disc-head"><span class="disc-dot" style="background:${color}"></span><span class="disc-name">${r.name}</span><span class="disc-pct">${(r.confidence * 100).toFixed(0)}%</span></div>
+      <div class="conf-bar"><i style="width:${r.confidence * 100}%;background:${color}"></i></div>
+      <div class="meta">${r.point.lat.toFixed(4)}, ${r.point.lng.toFixed(4)}${r.documentedOccurrences ? ` &middot; ${r.documentedOccurrences} documented` : ""}</div>
+      <div class="disc-why">${escapeHtml(r.rationale)}</div>
+    </div>`;
+  });
+
+  if (d.knownDeposits && d.knownDeposits.length) {
+    html += `<div class="section-label">Documented occurrences nearby</div>`;
+    html += `<div class="cite-list">${d.knownDeposits.slice(0, 8).map((x) => `<div class="known-row">${escapeHtml(x.name || "Occurrence")} <span>${escapeHtml(x.commodity || "")} &middot; ${x.distanceKm} km</span></div>`).join("")}</div>`;
+  }
+
+  if (d.narrative) {
+    html += `<div class="section-label">Geological brief${d.model ? " &middot; " + d.model : ""}</div>`;
+    html += `<div class="final-card">${renderBrief(d.narrative)}</div>`;
+    if (d.citations && d.citations.length) {
+      html += `<div class="cite-list">${d.citations.slice(0, 10).map((c) => `<a href="${c.url}" target="_blank" rel="noopener" class="cite">${escapeHtml(c.title || c.url)}</a>`).join("")}</div>`;
+    }
+  }
+
+  body.innerHTML = html;
+  body.querySelectorAll(".disc-item").forEach((el) => {
+    el.addEventListener("click", () => map.flyTo([parseFloat(el.dataset.lat), parseFloat(el.dataset.lng)], 11, { duration: 0.8 }));
+  });
+}
+
 async function fetchIntelligence(aoi, commodityId) {
   try {
     const res = await fetch("/api/intelligence", {
@@ -463,6 +550,8 @@ async function runScan(withAi) {
   }
 }
 
+$("discover-btn").addEventListener("click", runDiscover);
+$("discover-place").addEventListener("keydown", (e) => { if (e.key === "Enter") runDiscover(); });
 $("scan-btn").addEventListener("click", () => runScan(false));
 $("analyze-btn").addEventListener("click", () => runScan(true));
 

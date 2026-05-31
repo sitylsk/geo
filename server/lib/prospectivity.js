@@ -118,11 +118,11 @@ function proximityGrid(bounds, n, points, decayKm) {
 }
 
 /**
- * Build the real prospectivity score grid + per-component layers.
- * intel is the regional-intelligence object (deposits, seismicity, tectonics).
+ * Build the commodity-independent shared context once (real DEM ruggedness,
+ * known-deposit proximity, seismicity, tectonic setting). Reused across many
+ * commodities for fast discovery without repeated network calls.
  */
-export async function buildRealProspectivity({ bounds, gridSize, commodityId, intel, weights }) {
-  // Use a coarse real grid then upsample (keeps DEM calls cheap).
+export async function buildSharedContext({ bounds, gridSize, intel }) {
   const coarse = Math.min(gridSize, 16);
   const elev = await fetchElevationGrid(bounds, coarse);
   const rug = ruggednessGrid(elev, coarse);
@@ -134,13 +134,31 @@ export async function buildRealProspectivity({ bounds, gridSize, commodityId, in
   const depositProx = proximityGrid(bounds, coarse, deposits, Math.max(aoiKm * 0.15, 8));
   const seismicProx = proximityGrid(bounds, coarse, eqEvents, Math.max(aoiKm * 0.25, 25));
 
-  // Tectonic proximity is a scalar (nearest boundary distance) -> uniform layer.
   const tb = intel?.tectonics?.nearestBoundary;
   const tectonicScore = tb ? clamp(1 - tb.distanceKm / 600, 0, 1) : 0.3;
 
-  const w = weights || defaultWeights(commodityId);
+  return {
+    coarse,
+    bounds,
+    gridSize,
+    rug,
+    depositProx,
+    seismicProx,
+    tectonicScore,
+    deposits,
+    dataConfidence: {
+      dem: rug.hasData,
+      knownDeposits: depositProx.hasData ? deposits.length : 0,
+      seismic: eqEvents.length,
+      tectonic: Boolean(tb),
+    },
+  };
+}
 
-  // Combine per cell on the coarse grid.
+/** Apply commodity-specific weights to a shared context to get a score grid. */
+export function scoreFromContext(ctx, commodityId, weights) {
+  const { coarse, rug, depositProx, seismicProx, tectonicScore } = ctx;
+  const w = weights || defaultWeights(commodityId);
   const score = Array.from({ length: coarse }, () => new Array(coarse).fill(0));
   const components = { ruggedness: rug.grid, depositProximity: depositProx.grid, seismic: seismicProx.grid };
   for (let j = 0; j < coarse; j++) {
@@ -148,29 +166,25 @@ export async function buildRealProspectivity({ bounds, gridSize, commodityId, in
       const rugV = rug.hasData ? rug.grid[j][i] : 0.5;
       const depV = depositProx.hasData ? depositProx.grid[j][i] : 0;
       const seisV = seismicProx.hasData ? seismicProx.grid[j][i] : 0.3;
-      const v =
-        rugV * w.structure +
-        depV * w.deposits +
-        seisV * w.seismic +
-        tectonicScore * w.tectonic;
-      score[j][i] = v;
+      score[j][i] = rugV * w.structure + depV * w.deposits + seisV * w.seismic + tectonicScore * w.tectonic;
     }
   }
-  const normScore = normalise(score);
-
   return {
     coarse,
-    scoreGrid: upsample(normScore, gridSize),
+    scoreGrid: upsample(normalise(score), ctx.gridSize),
     componentsCoarse: components,
     tectonicScore,
-    dataConfidence: {
-      dem: rug.hasData,
-      knownDeposits: depositProx.hasData ? deposits.length : 0,
-      seismic: eqEvents.length,
-      tectonic: Boolean(tb),
-    },
+    dataConfidence: ctx.dataConfidence,
     weights: w,
   };
+}
+
+/**
+ * Build the real prospectivity score grid for a single commodity.
+ */
+export async function buildRealProspectivity({ bounds, gridSize, commodityId, intel, weights }) {
+  const ctx = await buildSharedContext({ bounds, gridSize, intel });
+  return scoreFromContext(ctx, commodityId, weights);
 }
 
 function defaultWeights(commodityId) {

@@ -554,3 +554,33 @@
 .cite-list { display: grid; gap: 6px; margin-bottom: 14px; }
 .cite { font-size: 11.5px; color: var(--brand); padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: rgba(52,214,200,0.05); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cite:hover { border-color: var(--brand); }
+
+/* ---- Discover box ---- */
+.discover-box {
+  background: linear-gradient(150deg, rgba(52,214,200,0.1), rgba(79,176,255,0.06));
+  border: 1px solid rgba(52,214,200,0.28); border-radius: 14px;
+  padding: 14px; margin-bottom: 18px;
+}
+.discover-label { font-size: 13px; font-weight: 800; letter-spacing: 0.3px; margin-bottom: 4px; }
+.discover-row { display: flex; gap: 8px; margin-top: 10px; }
+.discover-row input {
+  flex: 1; min-width: 0; background: #0a1424; border: 1px solid var(--border-strong);
+  color: var(--text); border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit;
+}
+.discover-row input:focus { outline: none; border-color: var(--brand); }
+.discover-row .btn { white-space: nowrap; }
+
+/* ---- Discovery result items ---- */
+.disc-item { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 9px; cursor: pointer; transition: border-color 0.15s ease, transform 0.12s ease; background: rgba(10,16,28,0.5); }
+.disc-item:hover { border-color: var(--border-strong); transform: translateX(-2px); }
+.disc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.disc-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+.disc-name { font-weight: 700; font-size: 14.5px; flex: 1; }
+.disc-pct { font-weight: 800; font-size: 14px; color: var(--text); }
+.disc-why { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.known-row { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; }
+.known-row span { color: var(--muted-2); white-space: nowrap; }
+
+/* ---- Refined results target cards ---- */
+.target-item, .summary-card { border-radius: 14px; }
+.summary-card { background: linear-gradient(150deg, rgba(20,30,50,0.8), rgba(11,17,32,0.6)); border: 1px solid var(--border-strong); }

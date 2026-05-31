@@ -58,9 +58,9 @@ export async function fetchMrdsDeposits(minLng, minLat, maxLng, maxLat, limit = 
     const deposits = [];
     const blocks = xml.split("<gml:featureMember>").slice(1);
     for (const block of blocks) {
-      const name = block.match(/<site_name>([^<]*)<\/site_name>/)?.[1] || block.match(/<dep_name>([^<]*)<\/dep_name>/)?.[1];
-      const commodity = block.match(/<code_list>([^<]*)<\/code_list>/)?.[1] || block.match(/<commod>([^<]*)<\/commod>/)?.[1];
-      const status = block.match(/<dev_stat>([^<]*)<\/dev_stat>/)?.[1];
+      const name = block.match(/<(?:\w+:)?site_name>([^<]*)<\/(?:\w+:)?site_name>/)?.[1] || block.match(/<(?:\w+:)?dep_name>([^<]*)<\/(?:\w+:)?dep_name>/)?.[1];
+      const commodity = (block.match(/<(?:\w+:)?code_list>([^<]*)<\/(?:\w+:)?code_list>/)?.[1] || block.match(/<(?:\w+:)?commod>([^<]*)<\/(?:\w+:)?commod>/)?.[1] || "").trim();
+      const status = block.match(/<(?:\w+:)?dev_stat>([^<]*)<\/(?:\w+:)?dev_stat>/)?.[1];
       const pos = block.match(/<gml:pos[^>]*>([^<]+)<\/gml:pos>/)?.[1];
       if (!pos) continue;
       const [plat, plng] = pos.trim().split(/\s+/).map(Number);

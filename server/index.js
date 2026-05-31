@@ -26,6 +26,9 @@ import {
 } from "./lib/geophysical.js";
 import { listRemoteMethods, activeMethods, availableToAdd } from "./lib/remote-methods.js";
 import { buildRealProspectivity } from "./lib/prospectivity.js";
+import { discoverAtLocation } from "./lib/discover.js";
+import { geocodePlace } from "./lib/geocode.js";
+import { analyzeOpenAI } from "./lib/ai.js";
 import { validateAgainstDeposits } from "./lib/validation.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -182,6 +185,50 @@ api.post("/analyze", async (req, res) => {
     const { result: engineResult, intel } = await runScanEngine(req.body);
     const ai = await runPipeline(engineResult, { aoiLabel, intel, documents });
     res.json({ engine: publicEngineResult(engineResult), ai: publicAiResult(ai), intel });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post("/discover", async (req, res) => {
+  try {
+    let { place, lat, lng, radiusKm, narrative } = req.body || {};
+    let label = null;
+    if ((typeof lat !== "number" || typeof lng !== "number") && place) {
+      const geo = await geocodePlace(place);
+      if (!geo) return res.status(404).json({ error: `Could not locate "${place}".` });
+      lat = geo.lat;
+      lng = geo.lng;
+      label = geo.label;
+    }
+    if (typeof lat !== "number" || typeof lng !== "number") {
+      return res.status(400).json({ error: "Provide a place name or lat/lng." });
+    }
+    const discovery = await discoverAtLocation({ lat, lng, radiusKm: clampInt(radiusKm, 10, 300, 80), label });
+
+    if (narrative !== false) {
+      const top = discovery.topResources.length ? discovery.topResources : discovery.ranked.slice(0, 5);
+      const lines = top.map((r) => `- ${r.name}: ${(r.confidence * 100).toFixed(0)}% at ${r.point.lat}, ${r.point.lng}; ${r.rationale}`);
+      const known = discovery.knownDeposits.map((d) => `${d.name} (${d.commodity || "?"})`).slice(0, 8).join("; ") || "none in public databases";
+      const prompt = [
+        `Location: ${discovery.location.label} (${lat.toFixed(4)}, ${lng.toFixed(4)}).`,
+        `Ranked resource prospectivity (model + documented occurrences):`,
+        lines.join("\n"),
+        ``,
+        `Documented nearby occurrences: ${known}.`,
+        ``,
+        `Write a concise "what is here" geological brief: which resources are most likely, where (named points), the geological reason, and what to check first. Use web_search to confirm the regional geology and known mines, and cite sources. Add a planning-only disclaimer.`,
+      ].join("\n");
+      const ai = await analyzeOpenAI(
+        "You are an exploration geologist answering: what mineral and resource potential exists at this place? Be specific, structured and honest about uncertainty.",
+        prompt,
+        { effort: "low", maxTokens: 1800 },
+      );
+      discovery.narrative = ai.text;
+      discovery.citations = ai.citations || [];
+      discovery.model = ai.simulated ? null : ai.model;
+    }
+    res.json(discovery);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
