@@ -1,19 +1,76 @@
-// Intelligence providers. Degrades gracefully when API keys are absent.
+// LLM providers for the analysis brain.
+//
+// OpenAI GPT-5 family via the Responses API with the built-in web_search tool,
+// so the model can search the internet and ground its reasoning. Anthropic is
+// supported via its Messages API when a key is present. Either provider degrades
+// gracefully to the deterministic knowledge synthesis when unavailable.
 
+const OPENAI_RESPONSES = "https://api.openai.com/v1/responses";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
 
+// Powerful but cheap default. Override with OPENAI_MODEL (e.g. gpt-5-nano,
+// gpt-5.4-mini, gpt-5). gpt-5-mini is $0.25/$2.00 per 1M tokens.
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5-mini";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-1-20250805";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
+const WEB_SEARCH = process.env.OPENAI_DISABLE_WEB_SEARCH !== "1";
 
 export function providerStatus() {
   return {
-    anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
     openai: Boolean(process.env.OPENAI_API_KEY),
+    anthropic: Boolean(process.env.ANTHROPIC_API_KEY),
+    openaiModel: OPENAI_MODEL,
+    webSearch: WEB_SEARCH,
   };
 }
 
-async function callAnthropic(system, user, { maxTokens = 1400 } = {}) {
+function parseResponsesOutput(data) {
+  let text = "";
+  const citations = [];
+  let usedWebSearch = false;
+  for (const item of data.output || []) {
+    if (item.type === "web_search_call" || item.type === "web_search") usedWebSearch = true;
+    if (item.type === "message") {
+      for (const c of item.content || []) {
+        if (c.type === "output_text") {
+          text += c.text || "";
+          for (const a of c.annotations || []) {
+            if (a.type === "url_citation" && a.url) {
+              citations.push({ title: a.title || a.url, url: a.url });
+            }
+          }
+        }
+      }
+    }
+  }
+  return { text: text.trim(), citations, usedWebSearch };
+}
+
+async function callOpenAIResponses(system, user, { maxTokens = 2000, effort = "low", tools = true } = {}) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+  const body = {
+    model: OPENAI_MODEL,
+    instructions: system,
+    input: user,
+    max_output_tokens: maxTokens,
+    reasoning: { effort },
+  };
+  if (tools && WEB_SEARCH) body.tools = [{ type: "web_search" }];
+  const res = await fetch(OPENAI_RESPONSES, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(90000),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`OpenAI ${res.status}: ${txt.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  return parseResponsesOutput(data);
+}
+
+async function callAnthropic(system, user, { maxTokens = 2000 } = {}) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return null;
   const res = await fetch(ANTHROPIC_URL, {
@@ -29,59 +86,43 @@ async function callAnthropic(system, user, { maxTokens = 1400 } = {}) {
       system,
       messages: [{ role: "user", content: user }],
     }),
+    signal: AbortSignal.timeout(90000),
   });
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`Anthropic ${res.status}: ${txt.slice(0, 300)}`);
   }
   const data = await res.json();
-  return (data.content || []).map((c) => c.text || "").join("\n").trim();
+  return { text: (data.content || []).map((c) => c.text || "").join("\n").trim(), citations: [], usedWebSearch: false };
 }
 
-async function callOpenAI(system, user, { maxTokens = 1400 } = {}) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return null;
-  const res = await fetch(OPENAI_URL, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      max_tokens: maxTokens,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`OpenAI ${res.status}: ${txt.slice(0, 300)}`);
+export function hasOpenAI() {
+  return Boolean(process.env.OPENAI_API_KEY);
+}
+export function hasAnthropic() {
+  return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+export async function analyzeOpenAI(system, user, opts = {}) {
+  try {
+    const out = await callOpenAIResponses(system, user, opts);
+    if (out && out.text) {
+      return { provider: "openai", model: OPENAI_MODEL, simulated: false, ...out };
+    }
+  } catch (err) {
+    return { provider: "openai", model: OPENAI_MODEL, simulated: true, error: err.message, text: heuristicNarrative(user), citations: [] };
   }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || "";
+  return { provider: "openai", model: OPENAI_MODEL, simulated: true, text: heuristicNarrative(user), citations: [] };
 }
 
-export async function analyzeAnthropic(system, user, opts) {
+export async function analyzeAnthropic(system, user, opts = {}) {
   try {
     const out = await callAnthropic(system, user, opts);
-    if (out) return { provider: "anthropic", simulated: false, text: out };
+    if (out && out.text) return { provider: "anthropic", model: ANTHROPIC_MODEL, simulated: false, ...out };
   } catch (err) {
-    return { provider: "anthropic", simulated: true, error: err.message, text: heuristicNarrative(user) };
+    return { provider: "anthropic", model: ANTHROPIC_MODEL, simulated: true, error: err.message, text: heuristicNarrative(user), citations: [] };
   }
-  return { provider: "anthropic", simulated: true, text: heuristicNarrative(user) };
-}
-
-export async function analyzeOpenAI(system, user, opts) {
-  try {
-    const out = await callOpenAI(system, user, opts);
-    if (out) return { provider: "openai", simulated: false, text: out };
-  } catch (err) {
-    return { provider: "openai", simulated: true, error: err.message, text: heuristicNarrative(user) };
-  }
-  return { provider: "openai", simulated: true, text: heuristicNarrative(user) };
+  return { provider: "anthropic", model: ANTHROPIC_MODEL, simulated: true, text: heuristicNarrative(user), citations: [] };
 }
 
 function heuristicNarrative(user) {

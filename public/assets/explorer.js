@@ -270,11 +270,15 @@ function renderResults(result, ai) {
 
   if (ai?.summary) {
     const note = ai.simulated
-      ? `<div class="brief-note">Grounded analysis generated from live free data feeds and the geological knowledge base. Connect an AI key for an additional model-fusion pass.</div>`
-      : `<div class="brief-note">AI-fused analysis grounded on live free data feeds and the geological knowledge base.</div>`;
+      ? `<div class="brief-note">Grounded analysis from live free data feeds and the geological knowledge base. Add an AI key for an additional model-fusion pass.</div>`
+      : `<div class="brief-note">AI-fused analysis by ${ai.model || "GPT-5"}${ai.webSearch ? " with live web search" : ""}, grounded on the data feeds and geological knowledge base.</div>`;
     html += `<div class="section-label">Intelligence brief</div>`;
     html += note;
     html += `<div class="final-card">${renderBrief(ai.summary)}</div>`;
+    if (ai.citations && ai.citations.length) {
+      html += `<div class="section-label">Sources (web search)</div>`;
+      html += `<div class="cite-list">${ai.citations.slice(0, 12).map((c) => `<a href="${c.url}" target="_blank" rel="noopener" class="cite">${escapeHtml(c.title || c.url)}</a>`).join("")}</div>`;
+    }
   }
 
   body.innerHTML = html;
@@ -420,7 +424,7 @@ async function runScan(withAi) {
     documents: withAi ? state.documents : undefined,
   };
   try {
-    setStatus(withAi ? "Generating intelligence report…" : "Scanning…", true);
+    setStatus(withAi ? "Generating deep AI analysis (web search, up to ~2 min)…" : "Scanning…", true);
     const res = await fetch(withAi ? "/api/analyze" : "/api/scan", {
       method: "POST",
       headers: { "content-type": "application/json" },

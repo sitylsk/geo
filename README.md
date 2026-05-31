@@ -17,10 +17,15 @@ npm run dev            # or: npm start
 
 Open http://localhost:8080
 
-The full analysis works with no API keys. When no external AI key is present,
-Anthill produces a complete grounded synthesis from the live data feeds and the
-geological knowledge base (not a placeholder). Adding a key layers an extra
-model-fusion pass on top of the same grounded brief.
+The full analysis works with no API keys: Anthill produces a complete grounded
+synthesis from the live free data feeds and the geological knowledge base.
+
+The AI brain uses OpenAI GPT-5 (default `gpt-5-mini`, powerful but cheap) via the
+Responses API with the built-in `web_search` tool, so it can search the internet
+and cite sources. It runs a prospector vs skeptic multi-pass reasoning flow on
+top of the grounded brief. Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`)
+in `.env` to enable it. Adding `ANTHROPIC_API_KEY` splits the two voices across
+providers.
 
 ## Free data sources (no API key required)
 

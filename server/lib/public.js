@@ -78,6 +78,9 @@ export function publicAiResult(ai) {
     sections: ai.sections || null,
     grounded: Boolean(ai.grounded),
     simulated: Boolean(ai.simulated),
+    citations: ai.citations || [],
+    model: ai.providers?.openaiModel || null,
+    webSearch: Boolean(ai.providers?.webSearch),
   };
 }
 
