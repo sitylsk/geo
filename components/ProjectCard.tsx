@@ -1,4 +1,5 @@
 import type { Submission } from "@/lib/types";
+import { GithubIcon } from "./Icons";
 
 const CARD_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft", "bg-butter-soft"];
 
@@ -54,9 +55,9 @@ export default function ProjectCard({ submission, index }: { submission: Submiss
             href={submission.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="brut-press brut-focus shrink-0 rounded-full border-[2.5px] border-ink bg-card px-4 py-2 font-mono text-xs font-bold"
+            className="brut-press brut-focus inline-flex shrink-0 items-center gap-1.5 rounded-full border-[2.5px] border-ink bg-card px-4 py-2 font-mono text-xs font-bold"
           >
-            Repo ↗
+            <GithubIcon /> Repo
           </a>
         </div>
         <p className="mt-3 truncate font-mono text-[0.68rem] text-ink-soft">{repoLabel}</p>

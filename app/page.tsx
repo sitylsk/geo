@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import SubmissionForm from "@/components/SubmissionForm";
+import { LogoMark, ArrowRightIcon } from "@/components/Icons";
 import { listSubmissions } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export default async function Home() {
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl border-[2.5px] border-ink bg-clay text-paper brut-shadow-sm">
-            ▲
+            <LogoMark />
           </span>
           <span className="text-lg font-bold tracking-tight">Mobilethon Hub</span>
         </Link>
@@ -36,39 +37,39 @@ export default async function Home() {
             <span className="inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-sage-soft px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-widest brut-shadow-sm">
               <span className="h-2 w-2 rounded-full bg-clay" /> Submissions open
             </span>
-            <h1 className="mt-5 text-5xl font-bold leading-[0.95] tracking-tight sm:text-7xl">
-              Build it on
+            <h1 className="mt-5 text-5xl font-bold leading-[0.98] tracking-tight sm:text-7xl">
+              Build on
               <br />
-              <span className="text-clay">mobile.</span> Ship it
+              <span className="text-clay">mobile.</span> Submit
               <br />
-              <span className="text-sky">loud.</span>
+              with <span className="text-sky">confidence.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-ink-soft">
-              The Mobilethon is a mobile-first build sprint. Go solo or rally a team, hack your
-              idea into a real app, then drop your GitHub repo and three on-device screenshots
-              right here.
+              The Mobilethon is a mobile-first build sprint. Enter solo or with a team, turn your
+              idea into a working app, then submit your GitHub repository and three on-device
+              screenshots — all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#submit"
-                className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-clay px-7 py-3.5 text-base font-bold text-paper"
+                className="brut-press brut-focus inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-clay px-7 py-3.5 text-base font-bold text-paper"
               >
-                Submit your project →
+                Submit your project <ArrowRightIcon />
               </a>
               <Link
                 href="/showcase"
                 className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-7 py-3.5 text-base font-bold"
               >
-                Browse the wall
+                View submissions
               </Link>
             </div>
           </div>
 
-          {/* floating stat stack */}
+          {/* stat stack */}
           <div className="relative mx-auto hidden w-full max-w-sm lg:block">
-            <div className="brut-card animate-floaty rotate-[-1.5deg] p-6">
+            <div className="brut-card animate-floaty p-6">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-ink-soft">
-                On the board
+                Submissions
               </p>
               <p className="mt-1 text-6xl font-bold tracking-tight">{count}</p>
               <p className="text-sm text-ink-soft">projects submitted so far</p>
@@ -79,8 +80,8 @@ export default async function Home() {
                 <span className="h-3 flex-1 rounded-full border-[2px] border-ink bg-butter" />
               </div>
             </div>
-            <div className="brut-card absolute -bottom-8 -left-6 rotate-[3deg] p-4">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest">Solo · Team</p>
+            <div className="brut-card absolute -bottom-8 -left-6 p-4">
+              <p className="font-mono text-xs font-bold uppercase tracking-widest">Solo &amp; Team</p>
               <p className="text-sm text-ink-soft">both welcome</p>
             </div>
           </div>
@@ -92,27 +93,27 @@ export default async function Home() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
-              n: "①",
-              t: "Pick your mode",
-              d: "Hack solo or spin up a team with your crew.",
+              n: "1",
+              t: "Choose how you enter",
+              d: "Participate solo or register your team.",
               a: "bg-sky-soft",
             },
             {
-              n: "②",
-              t: "Add the details",
-              d: "Name, email, project, and your public GitHub repo.",
+              n: "2",
+              t: "Add your details",
+              d: "Name, email, project, and your public GitHub repository.",
               a: "bg-sage-soft",
             },
             {
-              n: "③",
-              t: "Drop 3 screenshots",
-              d: "Show it running on your actual device.",
+              n: "3",
+              t: "Attach 3 screenshots",
+              d: "Show the app running on your actual device.",
               a: "bg-clay-soft",
             },
           ].map((s) => (
             <div key={s.n} className="brut-card p-6">
               <span
-                className={`flex h-10 w-10 items-center justify-center rounded-xl border-[2.5px] border-ink text-lg font-bold ${s.a}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border-[2.5px] border-ink font-mono text-base font-bold ${s.a}`}
               >
                 {s.n}
               </span>
@@ -127,10 +128,10 @@ export default async function Home() {
       <section className="mx-auto mt-24 max-w-6xl px-5">
         <div className="mb-10 text-center">
           <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-clay">
-            The submission
+            Submission
           </span>
           <h2 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
-            Post your build
+            Submit your project
           </h2>
         </div>
         <SubmissionForm />
@@ -138,10 +139,10 @@ export default async function Home() {
 
       <footer className="mx-auto mt-24 max-w-6xl px-5">
         <div className="brut-card flex flex-col items-center gap-2 p-6 text-center">
-          <p className="font-mono text-xs font-bold uppercase tracking-widest text-ink-soft">
-            Mobilethon Hub — built for makers
+          <p className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-ink-soft">
+            <LogoMark className="text-clay" /> Mobilethon Hub
           </p>
-          <p className="text-sm text-ink-soft">Soft brutalism. Loud ideas. Muted palette.</p>
+          <p className="text-sm text-ink-soft">The official submission portal for the Mobilethon.</p>
         </div>
       </footer>
     </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { CameraIcon } from "./Icons";
 
 interface ScreenshotSlotProps {
   index: number;
@@ -57,13 +58,14 @@ export default function ScreenshotSlot({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 px-3 text-center">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-ink bg-paper text-lg font-bold">
-              {index + 1}
+          <div className="flex flex-col items-center gap-2 px-2 text-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-ink bg-paper">
+              <CameraIcon className="h-5 w-5" />
             </span>
-            <span className="font-mono text-[0.7rem] font-bold uppercase tracking-widest text-ink">
-              Add shot
+            <span className="font-mono text-[0.68rem] font-bold uppercase tracking-widest text-ink">
+              Shot {index + 1}
             </span>
+            <span className="text-[0.62rem] text-ink-soft">Tap or drop</span>
           </div>
         )}
 

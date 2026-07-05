@@ -1,9 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { ParticipationMode, TeamMember } from "@/lib/types";
 import Field from "./Field";
 import ScreenshotSlot from "./ScreenshotSlot";
+import {
+  UserIcon,
+  UsersIcon,
+  CheckIcon,
+  ArrowRightIcon,
+  PlusIcon,
+  CloseIcon,
+} from "./Icons";
 
 const SCREENSHOT_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft"];
 
@@ -118,20 +126,20 @@ export default function SubmissionForm() {
   if (done) {
     return (
       <div className="brut-card animate-rise mx-auto max-w-2xl p-8 text-center sm:p-12">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-[2.5px] border-ink bg-sage-soft text-3xl">
-          ✶
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-[2.5px] border-ink bg-sage-soft">
+          <CheckIcon className="h-8 w-8" />
         </div>
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">You&apos;re in the arena.</h2>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Submission received.</h2>
         <p className="mx-auto mt-3 max-w-md text-ink-soft">
-          <span className="font-bold text-ink">{done.projectName}</span> has been submitted to the
-          Mobilethon. Your screenshots and repo are on the board.
+          <span className="font-bold text-ink">{done.projectName}</span> has been submitted
+          successfully. Your repository and screenshots are now on the showcase.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <a
             href="/showcase"
-            className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-butter px-6 py-3 font-bold"
+            className="brut-press brut-focus inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-butter px-6 py-3 font-bold"
           >
-            See the showcase →
+            View the showcase <ArrowRightIcon />
           </a>
           <button
             type="button"
@@ -149,22 +157,22 @@ export default function SubmissionForm() {
     <form id="submit" onSubmit={handleSubmit} className="mx-auto max-w-4xl">
       {/* STEP 1 — mode */}
       <section className="mb-10">
-        <StepHeader step="01" title="How are you hacking?" accent="bg-clay-soft" />
+        <StepHeader step="01" title="How are you entering?" accent="bg-clay-soft" />
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <ModeCard
             active={state.mode === "solo"}
             onClick={() => update("mode", "solo")}
-            emoji="🎧"
+            icon={<UserIcon />}
             title="Solo"
-            desc="Just you, your device, and a wild idea."
+            desc="Just you and your device."
             accent="bg-sky-soft"
           />
           <ModeCard
             active={state.mode === "team"}
             onClick={() => update("mode", "team")}
-            emoji="🛰️"
+            icon={<UsersIcon />}
             title="Team"
-            desc="A crew building together. Add your squad below."
+            desc="Building with others. Add your team below."
             accent="bg-sage-soft"
           />
         </div>
@@ -172,7 +180,7 @@ export default function SubmissionForm() {
 
       {/* STEP 2 — who */}
       <section className="mb-10">
-        <StepHeader step="02" title="Who's shipping this?" accent="bg-sky-soft" />
+        <StepHeader step="02" title="Who's submitting?" accent="bg-sky-soft" />
         <div className="brut-card mt-5 grid gap-5 p-6 sm:grid-cols-2 sm:p-8">
           <Field
             id="name"
@@ -210,9 +218,9 @@ export default function SubmissionForm() {
                   <button
                     type="button"
                     onClick={addTeammate}
-                    className="brut-focus rounded-full border-[2px] border-ink bg-butter px-3 py-1 font-mono text-[0.65rem] font-bold uppercase tracking-wider transition hover:-translate-y-0.5"
+                    className="brut-focus inline-flex items-center gap-1.5 rounded-full border-[2px] border-ink bg-butter px-3 py-1 font-mono text-[0.65rem] font-bold uppercase tracking-wider transition hover:-translate-y-0.5"
                   >
-                    + Add teammate
+                    <PlusIcon className="h-3 w-3" /> Add teammate
                   </button>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -237,10 +245,10 @@ export default function SubmissionForm() {
                       <button
                         type="button"
                         onClick={() => removeTeammate(i)}
-                        className="brut-focus rounded-lg border-[2px] border-ink bg-clay-soft px-3 py-2 font-mono text-xs font-bold"
+                        className="brut-focus flex items-center justify-center rounded-lg border-[2px] border-ink bg-clay-soft px-3 py-2"
                         aria-label="Remove teammate"
                       >
-                        ✕
+                        <CloseIcon />
                       </button>
                     </div>
                   ))}
@@ -284,10 +292,10 @@ export default function SubmissionForm() {
 
       {/* STEP 4 — screenshots */}
       <section className="mb-10">
-        <StepHeader step="04" title="3 shots from your device" accent="bg-butter" />
+        <StepHeader step="04" title="Screenshots from your device" accent="bg-butter" />
         <p className="mb-4 mt-2 max-w-2xl text-sm text-ink-soft">
-          Capture the app running on your phone or tablet. All three are required — think home
-          screen, a core feature, and a moment of delight.
+          Capture the app running on your phone or tablet. All three are required — for example, the
+          home screen, a core feature, and a key result.
         </p>
         <div className="brut-card p-6 sm:p-8">
           <div className="grid grid-cols-3 gap-3 sm:gap-5">
@@ -309,7 +317,7 @@ export default function SubmissionForm() {
 
       {errors.length > 0 && (
         <div className="brut-card animate-rise mb-6 border-clay bg-clay-soft/70 p-5">
-          <p className="mb-2 font-bold">Almost — fix these first:</p>
+          <p className="mb-2 font-bold">Please resolve the following:</p>
           <ul className="list-inside list-disc space-y-1 text-sm text-ink">
             {errors.map((err, i) => (
               <li key={i}>{err}</li>
@@ -322,9 +330,9 @@ export default function SubmissionForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="brut-press brut-focus w-full rounded-2xl border-[2.5px] border-ink bg-clay px-8 py-5 text-xl font-bold tracking-tight text-paper disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-16"
+          className="brut-press brut-focus inline-flex w-full items-center justify-center gap-2.5 rounded-2xl border-[2.5px] border-ink bg-clay px-8 py-5 text-xl font-bold tracking-tight text-paper disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-16"
         >
-          {submitting ? "Submitting…" : "Submit to the Mobilethon →"}
+          {submitting ? "Submitting…" : <>Submit to the Mobilethon <ArrowRightIcon className="h-5 w-5" /></>}
         </button>
         <p className="font-mono text-[0.7rem] uppercase tracking-widest text-ink-soft">
           You can submit again anytime before the deadline.
@@ -350,14 +358,14 @@ function StepHeader({ step, title, accent }: { step: string; title: string; acce
 function ModeCard({
   active,
   onClick,
-  emoji,
+  icon,
   title,
   desc,
   accent,
 }: {
   active: boolean;
   onClick: () => void;
-  emoji: string;
+  icon: ReactNode;
   title: string;
   desc: string;
   accent: string;
@@ -371,15 +379,15 @@ function ModeCard({
       }`}
       aria-pressed={active}
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-paper text-2xl">
-        {emoji}
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-paper">
+        {icon}
       </span>
       <span>
         <span className="flex items-center gap-2 text-xl font-bold">
           {title}
           {active && (
-            <span className="rounded-full border-[2px] border-ink bg-paper px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider">
-              picked
+            <span className="inline-flex items-center gap-1 rounded-full border-[2px] border-ink bg-paper px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider">
+              <CheckIcon className="h-3 w-3" /> Selected
             </span>
           )}
         </span>

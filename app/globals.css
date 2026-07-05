@@ -28,13 +28,14 @@
   --color-butter-soft: #f2e3b0;
 
   --radius-brut: 1.25rem;
-  --shadow-brut: 6px 7px 0 -1px rgba(35, 32, 27, 0.85);
-  --shadow-brut-sm: 3px 4px 0 -1px rgba(35, 32, 27, 0.85);
+  --shadow-brut: 5px 6px 0 -1px rgba(35, 32, 27, 0.16);
+  --shadow-brut-sm: 3px 3px 0 -1px rgba(35, 32, 27, 0.16);
 }
 
 :root {
-  --shadow-soft: 6px 7px 0 -1px rgba(35, 32, 27, 0.85);
-  --shadow-soft-sm: 3px 4px 0 -1px rgba(35, 32, 27, 0.85);
+  /* softer, more refined offset shadow — depth without the hard black slab */
+  --shadow-soft: 5px 6px 0 -1px rgba(35, 32, 27, 0.16), 0 10px 26px -14px rgba(35, 32, 27, 0.35);
+  --shadow-soft-sm: 3px 3px 0 -1px rgba(35, 32, 27, 0.16), 0 6px 14px -10px rgba(35, 32, 27, 0.3);
 }
 
 html {
@@ -45,11 +46,11 @@ body {
   background-color: #f3efe6;
   color: #23201b;
   font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
-  /* subtle paper grain via layered gradients */
+  /* very subtle tonal wash — restrained for a professional feel */
   background-image:
-    radial-gradient(circle at 12% 18%, rgba(208, 135, 106, 0.07), transparent 42%),
-    radial-gradient(circle at 88% 8%, rgba(134, 151, 184, 0.08), transparent 40%),
-    radial-gradient(circle at 78% 92%, rgba(143, 160, 126, 0.09), transparent 46%);
+    radial-gradient(circle at 12% 18%, rgba(208, 135, 106, 0.045), transparent 44%),
+    radial-gradient(circle at 88% 8%, rgba(134, 151, 184, 0.05), transparent 42%),
+    radial-gradient(circle at 78% 92%, rgba(143, 160, 126, 0.055), transparent 48%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -82,12 +83,12 @@ body {
     background-color 180ms ease;
 }
 .brut-press:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 8px 10px 0 -1px rgba(35, 32, 27, 0.9);
+  transform: translate(-1px, -2px);
+  box-shadow: 6px 8px 0 -1px rgba(35, 32, 27, 0.18), 0 14px 30px -14px rgba(35, 32, 27, 0.4);
 }
 .brut-press:active {
-  transform: translate(3px, 4px);
-  box-shadow: 2px 2px 0 -1px rgba(35, 32, 27, 0.9);
+  transform: translate(2px, 3px);
+  box-shadow: 2px 2px 0 -1px rgba(35, 32, 27, 0.18);
 }
 
 /* focus ring that fits the aesthetic */
@@ -97,11 +98,11 @@ body {
 }
 
 @keyframes floaty {
-  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
-  50% { transform: translateY(-8px) rotate(-1.5deg); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 .animate-floaty {
-  animation: floaty 6s ease-in-out infinite;
+  animation: floaty 7s ease-in-out infinite;
 }
 
 @keyframes rise {

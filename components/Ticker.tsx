@@ -1,11 +1,10 @@
 const ITEMS = [
   "MOBILETHON 2026",
-  "SHIP ON DEVICE",
-  "SOLO OR SQUAD",
-  "36 HOURS",
-  "PUSH TO MAIN",
-  "3 SCREENSHOTS",
-  "BUILD LOUD",
+  "SUBMISSIONS OPEN",
+  "SOLO OR TEAM",
+  "BUILT ON DEVICE",
+  "SHARE YOUR REPO",
+  "THREE SCREENSHOTS",
 ];
 
 export default function Ticker() {
@@ -19,7 +18,7 @@ export default function Ticker() {
             className="flex items-center gap-8 font-mono text-sm font-bold uppercase tracking-[0.25em] text-paper"
           >
             {item}
-            <span className="text-butter">✦</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-butter" />
           </span>
         ))}
       </div>
