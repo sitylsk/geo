@@ -92,6 +92,16 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function ExternalLinkIcon(props: IconProps) {
+  return (
+    <svg {...base} width="16" height="16" aria-hidden {...props}>
+      <path d="M9 6H6.5A2.5 2.5 0 0 0 4 8.5v9A2.5 2.5 0 0 0 6.5 20h9a2.5 2.5 0 0 0 2.5-2.5V15" />
+      <path d="M14 4h6v6" />
+      <path d="M20 4 11 13" />
+    </svg>
+  );
+}
+
 export function ClockIcon(props: IconProps) {
   return (
     <svg {...base} width="16" height="16" aria-hidden {...props}>

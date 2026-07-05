@@ -13,6 +13,7 @@ interface FormState {
   projectName: string;
   tagline: string;
   githubUrl: string;
+  liveUrl: string;
   screenshots: (string | null)[];
 }
 
@@ -22,6 +23,7 @@ const emptyState: FormState = {
   projectName: "",
   tagline: "",
   githubUrl: "",
+  liveUrl: "",
   screenshots: [null, null, null],
 };
 
@@ -58,6 +60,7 @@ export default function SubmissionForm() {
       projectName: state.projectName,
       tagline: state.tagline,
       githubUrl: state.githubUrl,
+      liveUrl: state.liveUrl.trim() || undefined,
       screenshots: state.screenshots.filter((s): s is string => Boolean(s)),
     };
 
@@ -149,10 +152,22 @@ export default function SubmissionForm() {
             <Field
               id="githubUrl"
               label="GitHub project URL"
+              type="url"
               placeholder="https://github.com/your-name/your-repo"
               value={state.githubUrl}
               onChange={(e) => update("githubUrl", e.target.value)}
               hint="Public repo so judges can browse your code."
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Field
+              id="liveUrl"
+              label="Live link (optional)"
+              type="url"
+              placeholder="https://your-project.vercel.app"
+              value={state.liveUrl}
+              onChange={(e) => update("liveUrl", e.target.value)}
+              hint="A live demo link (Vercel, Netlify, etc.) so judges can open your project directly."
             />
           </div>
         </div>

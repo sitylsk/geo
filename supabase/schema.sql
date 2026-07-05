@@ -10,8 +10,12 @@ create table if not exists public.submissions (
   project_name text not null,
   tagline      text not null,
   github_url   text not null,
+  live_url     text,
   screenshots  text[] not null default '{}'
 );
+
+-- Migration for existing tables created before the live_url field existed:
+alter table public.submissions add column if not exists live_url text;
 
 create index if not exists submissions_created_at_idx
   on public.submissions (created_at desc);

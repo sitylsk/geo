@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [timerStatus, setTimerStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [timerBusy, setTimerBusy] = useState(false);
+  const [timerHours, setTimerHours] = useState(24);
 
   async function load() {
     setBusy(true);
@@ -100,6 +101,10 @@ export default function AdminPage() {
       setTimerStatus({ kind: "err", msg: "Enter your admin token first." });
       return;
     }
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setTimerStatus({ kind: "err", msg: "Enter a valid number of hours." });
+      return;
+    }
     setTimerBusy(true);
     setTimerStatus(null);
     try {
@@ -172,21 +177,37 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="brut-card mt-6 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="brut-card mt-6 flex flex-col gap-4 p-5">
         <div>
           <p className="font-bold">Countdown timer</p>
           <p className="text-sm text-ink-soft">
-            Resets the public countdown to a fresh window starting now.
+            Sets the public countdown to close exactly this many hours from now — use this to
+            correct it if it's showing the wrong time remaining.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => resetTimer(24)}
-          disabled={timerBusy || !token}
-          className="brut-press brut-focus w-full shrink-0 rounded-xl border-[2.5px] border-ink bg-butter px-6 py-3 font-bold disabled:opacity-50 sm:w-auto"
-        >
-          {timerBusy ? "Resetting…" : "Reset to 24h"}
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <label className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              step="0.5"
+              value={timerHours}
+              onChange={(e) => setTimerHours(Number(e.target.value))}
+              className="brut-focus w-24 rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-base"
+            />
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-ink-soft">
+              hours from now
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={() => resetTimer(timerHours)}
+            disabled={timerBusy || !token}
+            className="brut-press brut-focus w-full shrink-0 rounded-xl border-[2.5px] border-ink bg-butter px-6 py-3 font-bold disabled:opacity-50 sm:w-auto"
+          >
+            {timerBusy ? "Updating…" : "Set countdown"}
+          </button>
+        </div>
       </div>
       {timerStatus && (
         <div

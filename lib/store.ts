@@ -46,6 +46,7 @@ interface SubmissionRow {
   project_name: string;
   tagline: string;
   github_url: string;
+  live_url?: string | null;
   screenshots: string[] | null;
 }
 
@@ -58,6 +59,7 @@ function rowToSubmission(row: SubmissionRow): Submission {
     projectName: row.project_name,
     tagline: row.tagline,
     githubUrl: row.github_url,
+    liveUrl: row.live_url ?? undefined,
     screenshots: row.screenshots ?? [],
   };
 }
@@ -110,7 +112,7 @@ export async function createSubmission(input: NewSubmissionInput): Promise<Submi
     screenshots.push(await uploadScreenshot(id, i, input.screenshots[i]));
   }
 
-  const row = {
+  const row: Record<string, unknown> = {
     id,
     name: input.name.trim(),
     email: input.email.trim(),
@@ -119,6 +121,11 @@ export async function createSubmission(input: NewSubmissionInput): Promise<Submi
     github_url: input.githubUrl.trim(),
     screenshots,
   };
+  // Only include live_url when provided, so submissions without one keep
+  // working even before the `live_url` column migration has been applied.
+  if (input.liveUrl) {
+    row.live_url = input.liveUrl.trim();
+  }
 
   const { data, error } = await supabase
     .from(SUBMISSIONS_TABLE)

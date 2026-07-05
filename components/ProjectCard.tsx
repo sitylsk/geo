@@ -1,5 +1,5 @@
 import type { Submission } from "@/lib/types";
-import { GithubIcon } from "./Icons";
+import { GithubIcon, ExternalLinkIcon } from "./Icons";
 
 const CARD_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft", "bg-butter-soft"];
 
@@ -57,8 +57,19 @@ export default function ProjectCard({
         </h3>
         <p className="mt-1 text-sm text-ink-soft">{submission.tagline}</p>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="min-w-0 truncate font-mono text-[0.68rem] text-ink-soft">{repoLabel}</p>
+        <p className="mt-4 min-w-0 truncate font-mono text-[0.68rem] text-ink-soft">{repoLabel}</p>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {submission.liveUrl && (
+            <a
+              href={submission.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="brut-press brut-focus inline-flex shrink-0 items-center gap-1.5 rounded-full border-[2.5px] border-ink bg-sky-soft px-4 py-2 font-mono text-xs font-bold"
+            >
+              <ExternalLinkIcon /> Live
+            </a>
+          )}
           <a
             href={submission.githubUrl}
             target="_blank"
