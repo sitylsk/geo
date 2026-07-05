@@ -18,6 +18,8 @@ export default function AdminPage() {
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [timerStatus, setTimerStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const [timerBusy, setTimerBusy] = useState(false);
 
   async function load() {
     setBusy(true);
@@ -93,9 +95,45 @@ export default function AdminPage() {
     }
   }
 
+  async function resetTimer(hours: number) {
+    if (!token) {
+      setTimerStatus({ kind: "err", msg: "Enter your admin token first." });
+      return;
+    }
+    setTimerBusy(true);
+    setTimerStatus(null);
+    try {
+      const res = await fetch("/api/deadline", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ hours }),
+      });
+      if (res.status === 401) {
+        setTimerStatus({ kind: "err", msg: "Unauthorized — check your admin token." });
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setTimerStatus({ kind: "err", msg: data.error ?? "Failed to reset timer." });
+        return;
+      }
+      setTimerStatus({
+        kind: "ok",
+        msg: `Timer reset — closes ${new Date(data.deadlineIso).toLocaleString()}.`,
+      });
+    } catch {
+      setTimerStatus({ kind: "err", msg: "Network error." });
+    } finally {
+      setTimerBusy(false);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-4xl px-5 py-12">
-      <h1 className="text-4xl font-bold tracking-tight">Admin · Choose winners</h1>
+      <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Admin · Choose winners</h1>
       <p className="mt-2 text-ink-soft">
         Enter your admin token, mark the winning projects, give each an award label and a rank,
         then publish.
@@ -118,7 +156,7 @@ export default function AdminPage() {
           type="button"
           onClick={load}
           disabled={busy || !token}
-          className="brut-press brut-focus rounded-xl border-[2.5px] border-ink bg-sky-soft px-6 py-3 font-bold disabled:opacity-50"
+          className="brut-press brut-focus w-full rounded-xl border-[2.5px] border-ink bg-sky-soft px-6 py-3 font-bold disabled:opacity-50 sm:w-auto"
         >
           {busy && !loaded ? "Loading…" : "Load projects"}
         </button>
@@ -134,15 +172,41 @@ export default function AdminPage() {
         </div>
       )}
 
+      <div className="brut-card mt-6 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-bold">Countdown timer</p>
+          <p className="text-sm text-ink-soft">
+            Resets the public countdown to a fresh window starting now.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => resetTimer(24)}
+          disabled={timerBusy || !token}
+          className="brut-press brut-focus w-full shrink-0 rounded-xl border-[2.5px] border-ink bg-butter px-6 py-3 font-bold disabled:opacity-50 sm:w-auto"
+        >
+          {timerBusy ? "Resetting…" : "Reset to 24h"}
+        </button>
+      </div>
+      {timerStatus && (
+        <div
+          className={`brut-card mt-3 p-4 font-bold ${
+            timerStatus.kind === "ok" ? "bg-sage-soft" : "bg-clay-soft"
+          }`}
+        >
+          {timerStatus.msg}
+        </div>
+      )}
+
       {loaded && (
         <>
-          <div className="mt-6 flex items-center justify-between gap-4">
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex items-center gap-2 font-bold">
               <input
                 type="checkbox"
                 checked={published}
                 onChange={(e) => setPublished(e.target.checked)}
-                className="h-5 w-5 accent-clay"
+                className="h-5 w-5 shrink-0 accent-clay"
               />
               Publish winners (show them on the public page)
             </label>
@@ -150,7 +214,7 @@ export default function AdminPage() {
               type="button"
               onClick={save}
               disabled={busy}
-              className="brut-press brut-focus rounded-xl border-[2.5px] border-ink bg-clay px-6 py-3 font-bold text-paper disabled:opacity-50"
+              className="brut-press brut-focus w-full rounded-xl border-[2.5px] border-ink bg-clay px-6 py-3 font-bold text-paper disabled:opacity-50 sm:w-auto"
             >
               {busy ? "Saving…" : "Save"}
             </button>
@@ -186,7 +250,7 @@ export default function AdminPage() {
                     onChange={(e) => patch(r.submission.id, { award: e.target.value })}
                     placeholder="Award (e.g. 1st Place)"
                     disabled={!r.selected}
-                    className="brut-focus rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-sm disabled:opacity-40 sm:w-44"
+                    className="brut-focus w-full rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-base disabled:opacity-40 sm:w-44 sm:text-sm"
                   />
                   <input
                     type="number"
@@ -194,7 +258,7 @@ export default function AdminPage() {
                     onChange={(e) => patch(r.submission.id, { rank: Number(e.target.value) })}
                     disabled={!r.selected}
                     aria-label="Rank"
-                    className="brut-focus w-20 rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-sm disabled:opacity-40"
+                    className="brut-focus w-full rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-base disabled:opacity-40 sm:w-20 sm:text-sm"
                   />
                 </div>
               ))}

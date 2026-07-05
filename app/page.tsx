@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import SubmissionForm from "@/components/SubmissionForm";
+import { CountdownBanner } from "@/components/CountdownTimer";
 import { LogoMark, ArrowRightIcon, DeviceIcon } from "@/components/Icons";
 import { listSubmissions } from "@/lib/store";
 
@@ -13,16 +14,18 @@ export default async function Home() {
   return (
     <main className="pb-24">
       {/* top bar */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border-[2.5px] border-ink bg-clay text-paper brut-shadow-sm">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
+        <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-clay text-paper brut-shadow-sm sm:h-9 sm:w-9">
             <LogoMark />
           </span>
-          <span className="text-lg font-bold tracking-tight">Mobilethon Hub</span>
+          <span className="truncate text-base font-bold tracking-tight sm:text-lg">
+            Mobilethon Hub
+          </span>
         </Link>
         <Link
           href="/showcase"
-          className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-4 py-2 text-sm font-bold"
+          className="brut-press brut-focus shrink-0 rounded-full border-[2.5px] border-ink bg-card px-3 py-2 text-xs font-bold sm:px-4 sm:text-sm"
         >
           Showcase{count > 0 ? ` · ${count}` : ""}
         </Link>
@@ -49,16 +52,16 @@ export default async function Home() {
               your own device, then submit your GitHub repository and three on-device screenshots —
               all in one place.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a
                 href="#submit"
-                className="brut-press brut-focus inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-clay px-7 py-3.5 text-base font-bold text-paper"
+                className="brut-press brut-focus inline-flex items-center justify-center gap-2 rounded-full border-[2.5px] border-ink bg-clay px-7 py-3.5 text-base font-bold text-paper"
               >
                 Submit your project <ArrowRightIcon />
               </a>
               <Link
                 href="/showcase"
-                className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-7 py-3.5 text-base font-bold"
+                className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-7 py-3.5 text-center text-base font-bold"
               >
                 View submissions
               </Link>
@@ -95,8 +98,13 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* countdown — always visible, on every device */}
+      <section className="mx-auto mt-12 max-w-6xl px-5 sm:mt-16">
+        <CountdownBanner />
+      </section>
+
       {/* how it works */}
-      <section className="mx-auto mt-20 max-w-6xl px-5">
+      <section className="mx-auto mt-12 max-w-6xl px-5 sm:mt-16">
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             {

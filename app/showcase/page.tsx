@@ -2,6 +2,7 @@ import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import ProjectCard from "@/components/ProjectCard";
 import ShowcaseTabs from "@/components/ShowcaseTabs";
+import { CountdownBadge } from "@/components/CountdownTimer";
 import { LogoMark, PlusIcon, CameraIcon, ArrowRightIcon } from "@/components/Icons";
 import { listSubmissions } from "@/lib/store";
 import { getWinnersConfig } from "@/lib/winners";
@@ -14,18 +15,20 @@ export default async function Showcase() {
 
   return (
     <main className="pb-24">
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border-[2.5px] border-ink bg-clay text-paper brut-shadow-sm">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
+        <Link href="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-clay text-paper brut-shadow-sm sm:h-9 sm:w-9">
             <LogoMark />
           </span>
-          <span className="text-lg font-bold tracking-tight">Mobilethon Hub</span>
+          <span className="truncate text-base font-bold tracking-tight sm:text-lg">
+            Mobilethon Hub
+          </span>
         </Link>
         <Link
           href="/#submit"
-          className="brut-press brut-focus inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-ink bg-clay px-4 py-2 text-sm font-bold text-paper"
+          className="brut-press brut-focus inline-flex shrink-0 items-center gap-1.5 rounded-full border-[2.5px] border-ink bg-clay px-3 py-2 text-xs font-bold text-paper sm:px-4 sm:text-sm"
         >
-          <PlusIcon /> Submit project
+          <PlusIcon /> <span className="sm:hidden">Submit</span><span className="hidden sm:inline">Submit project</span>
         </Link>
       </header>
 
@@ -35,10 +38,11 @@ export default async function Showcase() {
         <span className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-clay">
           The wall
         </span>
-        <h1 className="mt-2 text-5xl font-bold tracking-tight sm:text-6xl">Showcase</h1>
+        <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-6xl">Showcase</h1>
         <ShowcaseTabs active="showcase" winnersLive={winnersLive} />
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <Stat label="Projects" value={submissions.length} accent="bg-butter" />
+          <CountdownBadge />
         </div>
       </section>
 

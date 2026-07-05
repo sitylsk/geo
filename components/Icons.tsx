@@ -92,6 +92,15 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function ClockIcon(props: IconProps) {
+  return (
+    <svg {...base} width="16" height="16" aria-hidden {...props}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
 export function DeviceIcon(props: IconProps) {
   return (
     <svg {...base} width="22" height="22" aria-hidden {...props}>
