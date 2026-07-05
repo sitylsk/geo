@@ -1,9 +1,9 @@
 # Mobilethon Hub
 
 A soft-brutalist submission hub for the **Mobilethon** — a mobile-first build sprint.
-Participants choose whether they're **hacking solo or as a team**, then post their build:
-project name, tagline, public **GitHub repo**, **3 on-device screenshots**, and their
-**name + email** (plus teammates for teams). Submissions land on a public **Showcase** wall.
+Each participant builds on their own device and submits their project: name + email,
+project name, tagline, public **GitHub repo**, and **3 on-device screenshots**.
+Submissions land on a public **Showcase** wall.
 
 Built with **Next.js (App Router) + React + Tailwind CSS v4**.
 
@@ -19,7 +19,6 @@ type, offset shadows, a mono/grotesk type pairing) but deliberately gentled:
 
 ## Features
 
-- Solo / Team mode selector that adapts the form (team name + dynamic teammate list).
 - Submission form: name, email, project name, tagline, validated GitHub URL.
 - Exactly **3 device screenshots** with drag-and-drop upload + live previews.
 - Server-side validation (`lib/validate.ts`) with friendly error messages.

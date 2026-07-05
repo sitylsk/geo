@@ -45,9 +45,9 @@ export default async function Home() {
               with <span className="text-sky">confidence.</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-ink-soft">
-              The Mobilethon is a mobile-first build sprint. Enter solo or with a team, turn your
-              idea into a working app, then submit your GitHub repository and three on-device
-              screenshots — all in one place.
+              The Mobilethon is a mobile-first build sprint. Turn your idea into a working app on
+              your own device, then submit your GitHub repository and three on-device screenshots —
+              all in one place.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
@@ -81,8 +81,8 @@ export default async function Home() {
               </div>
             </div>
             <div className="brut-card absolute -bottom-8 -left-6 p-4">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest">Solo &amp; Team</p>
-              <p className="text-sm text-ink-soft">both welcome</p>
+              <p className="font-mono text-xs font-bold uppercase tracking-widest">Built on device</p>
+              <p className="text-sm text-ink-soft">mobile-first</p>
             </div>
           </div>
         </div>
@@ -94,14 +94,14 @@ export default async function Home() {
           {[
             {
               n: "1",
-              t: "Choose how you enter",
-              d: "Participate solo or register your team.",
+              t: "Add your details",
+              d: "Your name, email, project name, and tagline.",
               a: "bg-sky-soft",
             },
             {
               n: "2",
-              t: "Add your details",
-              d: "Name, email, project, and your public GitHub repository.",
+              t: "Share your repository",
+              d: "Submit the public GitHub repo for your project.",
               a: "bg-sage-soft",
             },
             {

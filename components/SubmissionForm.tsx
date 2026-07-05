@@ -1,26 +1,15 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
-import type { ParticipationMode, TeamMember } from "@/lib/types";
+import { useMemo, useState } from "react";
 import Field from "./Field";
 import ScreenshotSlot from "./ScreenshotSlot";
-import {
-  UserIcon,
-  UsersIcon,
-  CheckIcon,
-  ArrowRightIcon,
-  PlusIcon,
-  CloseIcon,
-} from "./Icons";
+import { CheckIcon, ArrowRightIcon } from "./Icons";
 
 const SCREENSHOT_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft"];
 
 interface FormState {
-  mode: ParticipationMode | null;
   name: string;
   email: string;
-  teamName: string;
-  teammates: TeamMember[];
   projectName: string;
   tagline: string;
   githubUrl: string;
@@ -28,11 +17,8 @@ interface FormState {
 }
 
 const emptyState: FormState = {
-  mode: null,
   name: "",
   email: "",
-  teamName: "",
-  teammates: [{ name: "", email: "" }],
   projectName: "",
   tagline: "",
   githubUrl: "",
@@ -62,39 +48,13 @@ export default function SubmissionForm() {
     });
   }
 
-  function updateTeammate(index: number, patch: Partial<TeamMember>) {
-    setState((s) => {
-      const next = s.teammates.map((m, i) => (i === index ? { ...m, ...patch } : m));
-      return { ...s, teammates: next };
-    });
-  }
-
-  function addTeammate() {
-    setState((s) => ({ ...s, teammates: [...s.teammates, { name: "", email: "" }] }));
-  }
-
-  function removeTeammate(index: number) {
-    setState((s) => ({
-      ...s,
-      teammates: s.teammates.filter((_, i) => i !== index),
-    }));
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors([]);
 
-    if (!state.mode) {
-      setErrors(["Please choose solo or team to begin."]);
-      return;
-    }
-
     const payload = {
-      mode: state.mode,
       name: state.name,
       email: state.email,
-      teamName: state.mode === "team" ? state.teamName : undefined,
-      teammates: state.mode === "team" ? state.teammates : undefined,
       projectName: state.projectName,
       tagline: state.tagline,
       githubUrl: state.githubUrl,
@@ -111,7 +71,10 @@ export default function SubmissionForm() {
       const data = await res.json();
       if (!res.ok) {
         setErrors(data.errors ?? [data.error ?? "Something went wrong."]);
-        window.scrollTo({ top: document.getElementById("submit")?.offsetTop ?? 0, behavior: "smooth" });
+        window.scrollTo({
+          top: document.getElementById("submit")?.offsetTop ?? 0,
+          behavior: "smooth",
+        });
         return;
       }
       setDone({ projectName: payload.projectName });
@@ -155,32 +118,9 @@ export default function SubmissionForm() {
 
   return (
     <form id="submit" onSubmit={handleSubmit} className="mx-auto max-w-4xl">
-      {/* STEP 1 — mode */}
+      {/* STEP 1 — who */}
       <section className="mb-10">
-        <StepHeader step="01" title="How are you entering?" accent="bg-clay-soft" />
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <ModeCard
-            active={state.mode === "solo"}
-            onClick={() => update("mode", "solo")}
-            icon={<UserIcon />}
-            title="Solo"
-            desc="Just you and your device."
-            accent="bg-sky-soft"
-          />
-          <ModeCard
-            active={state.mode === "team"}
-            onClick={() => update("mode", "team")}
-            icon={<UsersIcon />}
-            title="Team"
-            desc="Building with others. Add your team below."
-            accent="bg-sage-soft"
-          />
-        </div>
-      </section>
-
-      {/* STEP 2 — who */}
-      <section className="mb-10">
-        <StepHeader step="02" title="Who's submitting?" accent="bg-sky-soft" />
+        <StepHeader step="01" title="Your details" accent="bg-sky-soft" />
         <div className="brut-card mt-5 grid gap-5 p-6 sm:grid-cols-2 sm:p-8">
           <Field
             id="name"
@@ -197,71 +137,12 @@ export default function SubmissionForm() {
             value={state.email}
             onChange={(e) => update("email", e.target.value)}
           />
-
-          {state.mode === "team" && (
-            <>
-              <div className="sm:col-span-2">
-                <Field
-                  id="teamName"
-                  label="Team name"
-                  placeholder="The Null Pointers"
-                  value={state.teamName}
-                  onChange={(e) => update("teamName", e.target.value)}
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-ink-soft">
-                    Teammates
-                  </span>
-                  <button
-                    type="button"
-                    onClick={addTeammate}
-                    className="brut-focus inline-flex items-center gap-1.5 rounded-full border-[2px] border-ink bg-butter px-3 py-1 font-mono text-[0.65rem] font-bold uppercase tracking-wider transition hover:-translate-y-0.5"
-                  >
-                    <PlusIcon className="h-3 w-3" /> Add teammate
-                  </button>
-                </div>
-                <div className="flex flex-col gap-3">
-                  {state.teammates.map((mate, i) => (
-                    <div
-                      key={i}
-                      className="grid gap-3 rounded-xl border-[2px] border-dashed border-ink/45 bg-paper/60 p-3 sm:grid-cols-[1fr_1fr_auto]"
-                    >
-                      <input
-                        className="brut-focus rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-sm"
-                        placeholder="Teammate name"
-                        value={mate.name}
-                        onChange={(e) => updateTeammate(i, { name: e.target.value })}
-                      />
-                      <input
-                        className="brut-focus rounded-lg border-[2px] border-ink bg-card px-3 py-2 text-sm"
-                        placeholder="Teammate email"
-                        type="email"
-                        value={mate.email}
-                        onChange={(e) => updateTeammate(i, { email: e.target.value })}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeTeammate(i)}
-                        className="brut-focus flex items-center justify-center rounded-lg border-[2px] border-ink bg-clay-soft px-3 py-2"
-                        aria-label="Remove teammate"
-                      >
-                        <CloseIcon />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </section>
 
-      {/* STEP 3 — project */}
+      {/* STEP 2 — project */}
       <section className="mb-10">
-        <StepHeader step="03" title="Your project" accent="bg-sage-soft" />
+        <StepHeader step="02" title="Your project" accent="bg-sage-soft" />
         <div className="brut-card mt-5 grid gap-5 p-6 sm:grid-cols-2 sm:p-8">
           <Field
             id="projectName"
@@ -290,9 +171,9 @@ export default function SubmissionForm() {
         </div>
       </section>
 
-      {/* STEP 4 — screenshots */}
+      {/* STEP 3 — screenshots */}
       <section className="mb-10">
-        <StepHeader step="04" title="Screenshots from your device" accent="bg-butter" />
+        <StepHeader step="03" title="Screenshots from your device" accent="bg-butter" />
         <p className="mb-4 mt-2 max-w-2xl text-sm text-ink-soft">
           Capture the app running on your phone or tablet. All three are required — for example, the
           home screen, a core feature, and a key result.
@@ -352,47 +233,5 @@ function StepHeader({ step, title, accent }: { step: string; title: string; acce
       </span>
       <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
     </div>
-  );
-}
-
-function ModeCard({
-  active,
-  onClick,
-  icon,
-  title,
-  desc,
-  accent,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: ReactNode;
-  title: string;
-  desc: string;
-  accent: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`brut-press brut-focus flex items-start gap-4 rounded-2xl border-[2.5px] border-ink p-5 text-left ${
-        active ? accent : "bg-card"
-      }`}
-      aria-pressed={active}
-    >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-paper">
-        {icon}
-      </span>
-      <span>
-        <span className="flex items-center gap-2 text-xl font-bold">
-          {title}
-          {active && (
-            <span className="inline-flex items-center gap-1 rounded-full border-[2px] border-ink bg-paper px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wider">
-              <CheckIcon className="h-3 w-3" /> Selected
-            </span>
-          )}
-        </span>
-        <span className="mt-1 block text-sm text-ink-soft">{desc}</span>
-      </span>
-    </button>
   );
 }

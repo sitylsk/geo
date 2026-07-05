@@ -1,4 +1,4 @@
-import type { NewSubmissionInput, ParticipationMode, TeamMember } from "./types";
+import type { NewSubmissionInput } from "./types";
 
 export interface ValidationResult {
   ok: boolean;
@@ -17,11 +17,6 @@ export function validateSubmission(body: unknown): ValidationResult {
   const errors: string[] = [];
   const data = (body ?? {}) as Record<string, unknown>;
 
-  const mode = asString(data.mode) as ParticipationMode;
-  if (mode !== "solo" && mode !== "team") {
-    errors.push("Choose whether you are hacking solo or as a team.");
-  }
-
   const name = asString(data.name).trim();
   if (name.length < 2) errors.push("Please add your name.");
 
@@ -39,30 +34,6 @@ export function validateSubmission(body: unknown): ValidationResult {
     errors.push("Please add a valid GitHub project URL (github.com/owner/repo).");
   }
 
-  let teamName: string | undefined;
-  let teammates: TeamMember[] | undefined;
-  if (mode === "team") {
-    teamName = asString(data.teamName).trim();
-    if (teamName.length < 2) errors.push("Please add a team name.");
-
-    const rawMates = Array.isArray(data.teammates) ? data.teammates : [];
-    teammates = rawMates
-      .map((m) => {
-        const mm = (m ?? {}) as Record<string, unknown>;
-        return { name: asString(mm.name).trim(), email: asString(mm.email).trim() };
-      })
-      .filter((m) => m.name || m.email);
-
-    for (const mate of teammates) {
-      if (mate.email && !EMAIL_RE.test(mate.email)) {
-        errors.push(`Teammate email "${mate.email}" is not valid.`);
-      }
-      if (mate.email && !mate.name) {
-        errors.push("Each teammate needs a name.");
-      }
-    }
-  }
-
   const screenshots = Array.isArray(data.screenshots)
     ? (data.screenshots.filter((s) => typeof s === "string") as string[])
     : [];
@@ -77,16 +48,6 @@ export function validateSubmission(body: unknown): ValidationResult {
   return {
     ok: true,
     errors: [],
-    value: {
-      mode,
-      name,
-      email,
-      teamName,
-      teammates,
-      projectName,
-      tagline,
-      githubUrl,
-      screenshots,
-    },
+    value: { name, email, projectName, tagline, githubUrl, screenshots },
   };
 }

@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { NewSubmissionInput, Submission, TeamMember } from "./types";
+import type { NewSubmissionInput, Submission } from "./types";
 import {
   getSupabase,
   isSupabaseConfigured,
@@ -41,11 +41,8 @@ function decodeDataUrl(dataUrl: string): DecodedImage {
 interface SubmissionRow {
   id: string;
   created_at: string;
-  mode: string;
   name: string;
   email: string;
-  team_name: string | null;
-  teammates: TeamMember[] | null;
   project_name: string;
   tagline: string;
   github_url: string;
@@ -56,11 +53,8 @@ function rowToSubmission(row: SubmissionRow): Submission {
   return {
     id: row.id,
     createdAt: row.created_at,
-    mode: row.mode === "team" ? "team" : "solo",
     name: row.name,
     email: row.email,
-    teamName: row.team_name ?? undefined,
-    teammates: row.teammates ?? undefined,
     projectName: row.project_name,
     tagline: row.tagline,
     githubUrl: row.github_url,
@@ -113,20 +107,10 @@ export async function createSubmission(input: NewSubmissionInput): Promise<Submi
     screenshots.push(await uploadScreenshot(id, i, input.screenshots[i]));
   }
 
-  const teammates =
-    input.mode === "team"
-      ? (input.teammates ?? [])
-          .map((m) => ({ name: m.name.trim(), email: m.email.trim() }))
-          .filter((m) => m.name || m.email)
-      : null;
-
   const row = {
     id,
-    mode: input.mode,
     name: input.name.trim(),
     email: input.email.trim(),
-    team_name: input.mode === "team" ? input.teamName?.trim() || null : null,
-    teammates,
     project_name: input.projectName.trim(),
     tagline: input.tagline.trim(),
     github_url: input.githubUrl.trim(),

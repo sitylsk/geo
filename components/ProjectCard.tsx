@@ -24,18 +24,11 @@ export default function ProjectCard({ submission, index }: { submission: Submiss
       </div>
 
       <div className="p-5">
-        <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full border-[2px] border-ink px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider ${accent}`}
-          >
-            {submission.mode === "team" ? "Team" : "Solo"}
-          </span>
-          {submission.mode === "team" && submission.teamName && (
-            <span className="truncate font-mono text-[0.7rem] font-bold text-ink-soft">
-              {submission.teamName}
-            </span>
-          )}
-        </div>
+        <span
+          className={`inline-block rounded-full border-[2px] border-ink px-2.5 py-0.5 font-mono text-[0.62rem] font-bold uppercase tracking-wider ${accent}`}
+        >
+          {submission.name}
+        </span>
 
         <h3 className="mt-3 text-2xl font-bold leading-tight tracking-tight">
           {submission.projectName}
@@ -43,14 +36,7 @@ export default function ProjectCard({ submission, index }: { submission: Submiss
         <p className="mt-1 text-sm text-ink-soft">{submission.tagline}</p>
 
         <div className="mt-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold">{submission.name}</p>
-            {submission.mode === "team" && submission.teammates && submission.teammates.length > 0 && (
-              <p className="truncate text-xs text-ink-soft">
-                + {submission.teammates.map((m) => m.name).filter(Boolean).join(", ")}
-              </p>
-            )}
-          </div>
+          <p className="min-w-0 truncate font-mono text-[0.68rem] text-ink-soft">{repoLabel}</p>
           <a
             href={submission.githubUrl}
             target="_blank"
@@ -60,7 +46,6 @@ export default function ProjectCard({ submission, index }: { submission: Submiss
             <GithubIcon /> Repo
           </a>
         </div>
-        <p className="mt-3 truncate font-mono text-[0.68rem] text-ink-soft">{repoLabel}</p>
       </div>
     </article>
   );

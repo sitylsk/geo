@@ -5,11 +5,8 @@
 create table if not exists public.submissions (
   id           uuid primary key default gen_random_uuid(),
   created_at   timestamptz not null default now(),
-  mode         text not null check (mode in ('solo', 'team')),
   name         text not null,
   email        text not null,
-  team_name    text,
-  teammates    jsonb,
   project_name text not null,
   tagline      text not null,
   github_url   text not null,

@@ -8,8 +8,6 @@ export const dynamic = "force-dynamic";
 
 export default async function Showcase() {
   const submissions = await listSubmissions();
-  const soloCount = submissions.filter((s) => s.mode === "solo").length;
-  const teamCount = submissions.filter((s) => s.mode === "team").length;
 
   return (
     <main className="pb-24">
@@ -37,8 +35,6 @@ export default async function Showcase() {
         <h1 className="mt-2 text-5xl font-bold tracking-tight sm:text-6xl">Showcase</h1>
         <div className="mt-5 flex flex-wrap gap-3">
           <Stat label="Projects" value={submissions.length} accent="bg-butter" />
-          <Stat label="Solo" value={soloCount} accent="bg-sky-soft" />
-          <Stat label="Teams" value={teamCount} accent="bg-sage-soft" />
         </div>
       </section>
 
