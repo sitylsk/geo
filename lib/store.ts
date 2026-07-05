@@ -2,10 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import crypto from "crypto";
 import type { NewSubmissionInput, Submission } from "./types";
-
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_FILE = path.join(DATA_DIR, "submissions.json");
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+import { DATA_DIR, DB_FILE, UPLOAD_DIR } from "./paths";
 
 async function ensureDirs() {
   await fs.mkdir(DATA_DIR, { recursive: true });

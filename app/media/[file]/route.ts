@@ -1,10 +1,9 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { UPLOAD_DIR } from "@/lib/paths";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 const CONTENT_TYPE: Record<string, string> = {
   ".png": "image/png",
