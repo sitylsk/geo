@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Field from "./Field";
 import ScreenshotSlot from "./ScreenshotSlot";
-import { CheckIcon, ArrowRightIcon } from "./Icons";
+import { CheckIcon, ArrowRightIcon, CloseIcon } from "./Icons";
 
 const SCREENSHOT_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft"];
 
@@ -29,7 +29,7 @@ export default function SubmissionForm() {
   const [state, setState] = useState<FormState>(emptyState);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ projectName: string } | null>(null);
+  const [done, setDone] = useState<{ projectName: string; email: string } | null>(null);
 
   const shotCount = useMemo(
     () => state.screenshots.filter(Boolean).length,
@@ -68,56 +68,43 @@ export default function SubmissionForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors(data.errors ?? [data.error ?? "Something went wrong."]);
-        window.scrollTo({
-          top: document.getElementById("submit")?.offsetTop ?? 0,
-          behavior: "smooth",
-        });
+
+      if (res.status === 413) {
+        setErrors([
+          "Your screenshots were too large to upload. Please re-add them and try again.",
+        ]);
+        scrollToTop();
         return;
       }
-      setDone({ projectName: payload.projectName });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrors(
+          data.errors ?? [data.error ?? "Something went wrong. Please try again."],
+        );
+        scrollToTop();
+        return;
+      }
+      setDone({ projectName: payload.projectName, email: payload.email });
       setState(emptyState);
     } catch {
-      setErrors(["Network error — please try again."]);
+      setErrors(["Network error — please check your connection and try again."]);
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (done) {
-    return (
-      <div className="brut-card animate-rise mx-auto max-w-2xl p-8 text-center sm:p-12">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-[2.5px] border-ink bg-sage-soft">
-          <CheckIcon className="h-8 w-8" />
-        </div>
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Submission received.</h2>
-        <p className="mx-auto mt-3 max-w-md text-ink-soft">
-          <span className="font-bold text-ink">{done.projectName}</span> has been submitted
-          successfully. Your repository and screenshots are now on the showcase.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <a
-            href="/showcase"
-            className="brut-press brut-focus inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-butter px-6 py-3 font-bold"
-          >
-            View the showcase <ArrowRightIcon />
-          </a>
-          <button
-            type="button"
-            onClick={() => setDone(null)}
-            className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-6 py-3 font-bold"
-          >
-            Submit another
-          </button>
-        </div>
-      </div>
-    );
+  function scrollToTop() {
+    window.scrollTo({
+      top: document.getElementById("submit")?.offsetTop ?? 0,
+      behavior: "smooth",
+    });
   }
 
   return (
-    <form id="submit" onSubmit={handleSubmit} className="mx-auto max-w-4xl">
+    <>
+      {done && <SuccessModal projectName={done.projectName} email={done.email} onClose={() => setDone(null)} />}
+      <form id="submit" onSubmit={handleSubmit} className="mx-auto max-w-4xl">
       {/* STEP 1 — who */}
       <section className="mb-10">
         <StepHeader step="01" title="Your details" accent="bg-sky-soft" />
@@ -219,7 +206,126 @@ export default function SubmissionForm() {
           You can submit again anytime before the deadline.
         </p>
       </div>
-    </form>
+      </form>
+    </>
+  );
+}
+
+function SuccessModal({
+  projectName,
+  email,
+  onClose,
+}: {
+  projectName: string;
+  email: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  const steps = [
+    {
+      n: "1",
+      t: "It's live on the showcase",
+      d: "Your project, repo and screenshots are now public on the wall.",
+      a: "bg-sky-soft",
+    },
+    {
+      n: "2",
+      t: "Judges review every entry",
+      d: "After the deadline, all submissions are reviewed and scored.",
+      a: "bg-sage-soft",
+    },
+    {
+      n: "3",
+      t: "Winners get announced",
+      d: "Results are posted on the Winners page — we'll reach out by email if you win.",
+      a: "bg-butter-soft",
+    },
+  ];
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="success-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <button
+        type="button"
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/40 backdrop-blur-sm"
+      />
+      <div className="brut-card animate-rise relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto p-7 sm:p-9">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="brut-focus absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border-[2.5px] border-ink bg-card transition hover:bg-clay-soft"
+        >
+          <CloseIcon />
+        </button>
+
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border-[2.5px] border-ink bg-sage-soft">
+          <CheckIcon className="h-7 w-7" />
+        </div>
+        <h2 id="success-title" className="mt-5 text-3xl font-bold tracking-tight">
+          You&apos;re in!
+        </h2>
+        <p className="mt-2 text-ink-soft">
+          <span className="font-bold text-ink">{projectName}</span> has been submitted to the
+          Mobilethon. A confirmation is tied to <span className="font-bold text-ink">{email}</span>.
+        </p>
+
+        <div className="mt-6">
+          <p className="mb-3 font-mono text-[0.72rem] font-bold uppercase tracking-[0.18em] text-ink-soft">
+            What happens next
+          </p>
+          <ol className="flex flex-col gap-3">
+            {steps.map((s) => (
+              <li key={s.n} className="flex items-start gap-3">
+                <span
+                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-[2.5px] border-ink font-mono text-sm font-bold ${s.a}`}
+                >
+                  {s.n}
+                </span>
+                <span>
+                  <span className="block font-bold">{s.t}</span>
+                  <span className="block text-sm text-ink-soft">{s.d}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="mt-7 flex flex-wrap gap-3">
+          <a
+            href="/showcase"
+            className="brut-press brut-focus inline-flex items-center gap-2 rounded-full border-[2.5px] border-ink bg-butter px-6 py-3 font-bold"
+          >
+            View the showcase <ArrowRightIcon />
+          </a>
+          <button
+            type="button"
+            onClick={onClose}
+            className="brut-press brut-focus rounded-full border-[2.5px] border-ink bg-card px-6 py-3 font-bold"
+          >
+            Submit another
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

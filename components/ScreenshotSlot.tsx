@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { CameraIcon } from "./Icons";
+import { compressImageToDataUrl } from "@/lib/compressImage";
 
 interface ScreenshotSlotProps {
   index: number;
@@ -10,7 +11,8 @@ interface ScreenshotSlotProps {
   accentClass: string;
 }
 
-const MAX_BYTES = 5 * 1024 * 1024;
+// Sanity cap on the *original* file before we compress it.
+const MAX_ORIGINAL_BYTES = 25 * 1024 * 1024;
 
 export default function ScreenshotSlot({
   index,
@@ -19,20 +21,28 @@ export default function ScreenshotSlot({
   accentClass,
 }: ScreenshotSlotProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
 
-  function handleFile(file: File | undefined | null) {
+  async function handleFile(file: File | undefined | null) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       alert("Please choose an image file (PNG, JPG, WEBP or GIF).");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      alert("That screenshot is larger than 5MB. Try a smaller one.");
+    if (file.size > MAX_ORIGINAL_BYTES) {
+      alert("That image is very large (over 25MB). Please choose a smaller screenshot.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => onChange(typeof reader.result === "string" ? reader.result : null);
-    reader.readAsDataURL(file);
+    setBusy(true);
+    try {
+      // Downscale + re-encode so the upload stays well under request limits.
+      const dataUrl = await compressImageToDataUrl(file);
+      onChange(dataUrl);
+    } catch {
+      alert("Sorry, that image couldn't be processed. Try a different screenshot.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -57,6 +67,13 @@ export default function ScreenshotSlot({
             alt={`Screenshot ${index + 1} preview`}
             className="h-full w-full object-cover"
           />
+        ) : busy ? (
+          <div className="flex flex-col items-center gap-2 px-2 text-center">
+            <span className="h-6 w-6 animate-spin rounded-full border-[2.5px] border-ink border-t-transparent" />
+            <span className="font-mono text-[0.62rem] font-bold uppercase tracking-widest text-ink">
+              Processing…
+            </span>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-2 px-2 text-center">
             <span className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-ink bg-paper">
