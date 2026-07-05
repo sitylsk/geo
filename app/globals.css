@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+/*
+  Mobilethon Hub — "Soft Brutalism"
+  Chunky, confident structure with rounded corners, muted tones,
+  and gentle offset shadows instead of harsh black slabs.
+*/
+
+@theme {
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Subtle, muted palette */
+  --color-paper: #f3efe6;
+  --color-paper-2: #eae4d6;
+  --color-card: #fbfaf5;
+  --color-ink: #23201b;
+  --color-ink-soft: #55504a;
+  --color-line: #23201b;
+
+  --color-clay: #d0876a;      /* muted terracotta */
+  --color-clay-soft: #eecdbf;
+  --color-sage: #8fa07e;      /* dusty sage */
+  --color-sage-soft: #d7dfcb;
+  --color-sky: #8697b8;       /* dusty blue */
+  --color-sky-soft: #d3dbe8;
+  --color-butter: #e6c56b;    /* soft mustard */
+  --color-butter-soft: #f2e3b0;
+
+  --radius-brut: 1.25rem;
+  --shadow-brut: 5px 6px 0 -1px rgba(35, 32, 27, 0.16);
+  --shadow-brut-sm: 3px 3px 0 -1px rgba(35, 32, 27, 0.16);
+}
+
+:root {
+  /* softer, more refined offset shadow — depth without the hard black slab */
+  --shadow-soft: 5px 6px 0 -1px rgba(35, 32, 27, 0.16), 0 10px 26px -14px rgba(35, 32, 27, 0.35);
+  --shadow-soft-sm: 3px 3px 0 -1px rgba(35, 32, 27, 0.16), 0 6px 14px -10px rgba(35, 32, 27, 0.3);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f3efe6;
+  color: #23201b;
+  font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  /* very subtle tonal wash — restrained for a professional feel */
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(208, 135, 106, 0.045), transparent 44%),
+    radial-gradient(circle at 88% 8%, rgba(134, 151, 184, 0.05), transparent 42%),
+    radial-gradient(circle at 78% 92%, rgba(143, 160, 126, 0.055), transparent 48%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* ---- Soft Brutalist primitives ---- */
+
+.brut-border {
+  border: 2.5px solid #23201b;
+}
+
+.brut-card {
+  background: #fbfaf5;
+  border: 2.5px solid #23201b;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.brut-shadow {
+  box-shadow: var(--shadow-soft);
+}
+
+.brut-shadow-sm {
+  box-shadow: var(--shadow-soft-sm);
+}
+
+/* pressable / interactive elements slide toward their shadow */
+.brut-press {
+  transition: transform 180ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    background-color 180ms ease;
+}
+.brut-press:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: 6px 8px 0 -1px rgba(35, 32, 27, 0.18), 0 14px 30px -14px rgba(35, 32, 27, 0.4);
+}
+.brut-press:active {
+  transform: translate(2px, 3px);
+  box-shadow: 2px 2px 0 -1px rgba(35, 32, 27, 0.18);
+}
+
+/* focus ring that fits the aesthetic */
+.brut-focus:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px #f3efe6, 0 0 0 5.5px #23201b, var(--shadow-soft-sm);
+}
+
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.animate-floaty {
+  animation: floaty 7s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+/* subtle marquee for the ticker */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 22s linear infinite;
+}
