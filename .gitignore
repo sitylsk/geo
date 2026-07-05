@@ -26,9 +26,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local submissions data store (runtime generated)
-/data/submissions.json
-
-# runtime-generated uploaded screenshots (keep the folder, ignore contents)
-/public/uploads/*
-!/public/uploads/.gitkeep
+# local submissions data store (legacy file store — now using Supabase)
+/data/
+.vercel

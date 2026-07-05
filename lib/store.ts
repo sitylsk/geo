@@ -1,28 +1,11 @@
-import { promises as fs } from "fs";
-import path from "path";
 import crypto from "crypto";
-import type { NewSubmissionInput, Submission } from "./types";
-import { DATA_DIR, DB_FILE, UPLOAD_DIR } from "./paths";
-
-async function ensureDirs() {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.mkdir(UPLOAD_DIR, { recursive: true });
-}
-
-async function readAll(): Promise<Submission[]> {
-  try {
-    const raw = await fs.readFile(DB_FILE, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as Submission[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeAll(rows: Submission[]): Promise<void> {
-  await ensureDirs();
-  await fs.writeFile(DB_FILE, JSON.stringify(rows, null, 2), "utf8");
-}
+import type { NewSubmissionInput, Submission, TeamMember } from "./types";
+import {
+  getSupabase,
+  isSupabaseConfigured,
+  SCREENSHOTS_BUCKET,
+  SUBMISSIONS_TABLE,
+} from "./supabase";
 
 const DATA_URL_RE = /^data:(image\/(png|jpe?g|webp|gif));base64,([A-Za-z0-9+/=]+)$/;
 
@@ -36,64 +19,129 @@ const EXT_BY_MIME: Record<string, string> = {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB per screenshot
 
-/**
- * Persist a base64 data URL screenshot to /public/uploads and return its
- * public path. Throws on invalid or oversized images.
- */
-async function saveScreenshot(dataUrl: string, id: string, index: number): Promise<string> {
+interface DecodedImage {
+  buffer: Buffer;
+  contentType: string;
+  ext: string;
+}
+
+function decodeDataUrl(dataUrl: string): DecodedImage {
   const match = DATA_URL_RE.exec(dataUrl.trim());
   if (!match) {
     throw new Error("Screenshots must be PNG, JPG, WEBP or GIF images.");
   }
-  const mime = match[1];
-  const base64 = match[3];
-  const buffer = Buffer.from(base64, "base64");
+  const contentType = match[1];
+  const buffer = Buffer.from(match[3], "base64");
   if (buffer.byteLength > MAX_IMAGE_BYTES) {
     throw new Error("Each screenshot must be smaller than 5MB.");
   }
-  const ext = EXT_BY_MIME[mime] ?? "png";
-  const fileName = `${id}-${index + 1}.${ext}`;
-  await ensureDirs();
-  await fs.writeFile(path.join(UPLOAD_DIR, fileName), buffer);
-  // Served via the /media route handler (works in dev & production, since
-  // files added to /public after build are not served statically).
-  return `/media/${fileName}`;
+  return { buffer, contentType, ext: EXT_BY_MIME[contentType] ?? "png" };
+}
+
+interface SubmissionRow {
+  id: string;
+  created_at: string;
+  mode: string;
+  name: string;
+  email: string;
+  team_name: string | null;
+  teammates: TeamMember[] | null;
+  project_name: string;
+  tagline: string;
+  github_url: string;
+  screenshots: string[] | null;
+}
+
+function rowToSubmission(row: SubmissionRow): Submission {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    mode: row.mode === "team" ? "team" : "solo",
+    name: row.name,
+    email: row.email,
+    teamName: row.team_name ?? undefined,
+    teammates: row.teammates ?? undefined,
+    projectName: row.project_name,
+    tagline: row.tagline,
+    githubUrl: row.github_url,
+    screenshots: row.screenshots ?? [],
+  };
 }
 
 export async function listSubmissions(): Promise<Submission[]> {
-  const rows = await readAll();
-  return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from(SUBMISSIONS_TABLE)
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load submissions: ${error.message}`);
+  }
+  return (data as SubmissionRow[]).map(rowToSubmission);
+}
+
+async function uploadScreenshot(
+  id: string,
+  index: number,
+  dataUrl: string,
+): Promise<string> {
+  const supabase = getSupabase();
+  const { buffer, contentType, ext } = decodeDataUrl(dataUrl);
+  const objectPath = `${id}/${index + 1}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from(SCREENSHOTS_BUCKET)
+    .upload(objectPath, buffer, { contentType, upsert: true });
+
+  if (error) {
+    throw new Error(`Failed to upload screenshot: ${error.message}`);
+  }
+
+  const { data } = supabase.storage.from(SCREENSHOTS_BUCKET).getPublicUrl(objectPath);
+  return data.publicUrl;
 }
 
 export async function createSubmission(input: NewSubmissionInput): Promise<Submission> {
+  const supabase = getSupabase();
   const id = crypto.randomUUID();
 
   const screenshots: string[] = [];
   for (let i = 0; i < input.screenshots.length; i++) {
-    screenshots.push(await saveScreenshot(input.screenshots[i], id, i));
+    screenshots.push(await uploadScreenshot(id, i, input.screenshots[i]));
   }
 
-  const submission: Submission = {
+  const teammates =
+    input.mode === "team"
+      ? (input.teammates ?? [])
+          .map((m) => ({ name: m.name.trim(), email: m.email.trim() }))
+          .filter((m) => m.name || m.email)
+      : null;
+
+  const row = {
     id,
-    createdAt: new Date().toISOString(),
     mode: input.mode,
     name: input.name.trim(),
     email: input.email.trim(),
-    teamName: input.mode === "team" ? input.teamName?.trim() || undefined : undefined,
-    teammates:
-      input.mode === "team"
-        ? (input.teammates ?? [])
-            .map((m) => ({ name: m.name.trim(), email: m.email.trim() }))
-            .filter((m) => m.name || m.email)
-        : undefined,
-    projectName: input.projectName.trim(),
+    team_name: input.mode === "team" ? input.teamName?.trim() || null : null,
+    teammates,
+    project_name: input.projectName.trim(),
     tagline: input.tagline.trim(),
-    githubUrl: input.githubUrl.trim(),
+    github_url: input.githubUrl.trim(),
     screenshots,
   };
 
-  const rows = await readAll();
-  rows.push(submission);
-  await writeAll(rows);
-  return submission;
+  const { data, error } = await supabase
+    .from(SUBMISSIONS_TABLE)
+    .insert(row)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to save submission: ${error.message}`);
+  }
+
+  return rowToSubmission(data as SubmissionRow);
 }
