@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import ProjectCard from "@/components/ProjectCard";
+import ShowcaseTabs from "@/components/ShowcaseTabs";
 import { LogoMark, PlusIcon, CameraIcon, ArrowRightIcon } from "@/components/Icons";
 import { listSubmissions } from "@/lib/store";
+import { getWinnersConfig } from "@/lib/winners";
 
 export const dynamic = "force-dynamic";
 
 export default async function Showcase() {
-  const submissions = await listSubmissions();
+  const [submissions, winners] = await Promise.all([listSubmissions(), getWinnersConfig()]);
+  const winnersLive = winners.published && winners.entries.length > 0;
 
   return (
     <main className="pb-24">
@@ -33,7 +36,8 @@ export default async function Showcase() {
           The wall
         </span>
         <h1 className="mt-2 text-5xl font-bold tracking-tight sm:text-6xl">Showcase</h1>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <ShowcaseTabs active="showcase" winnersLive={winnersLive} />
+        <div className="mt-6 flex flex-wrap gap-3">
           <Stat label="Projects" value={submissions.length} accent="bg-butter" />
         </div>
       </section>
@@ -46,7 +50,7 @@ export default async function Showcase() {
             </div>
             <h2 className="text-2xl font-bold">No submissions yet.</h2>
             <p className="mx-auto mt-2 max-w-sm text-ink-soft">
-              Be the first to submit a project. Solo or team — the showcase is open.
+              Be the first to submit a project — the showcase is open.
             </p>
             <Link
               href="/#submit"

@@ -3,12 +3,34 @@ import { GithubIcon } from "./Icons";
 
 const CARD_ACCENTS = ["bg-clay-soft", "bg-sage-soft", "bg-sky-soft", "bg-butter-soft"];
 
-export default function ProjectCard({ submission, index }: { submission: Submission; index: number }) {
+export default function ProjectCard({
+  submission,
+  index,
+  award,
+}: {
+  submission: Submission;
+  index: number;
+  award?: string;
+}) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length];
   const repoLabel = submission.githubUrl.replace(/^https?:\/\/(www\.)?github\.com\//i, "");
+  const isWinner = Boolean(award);
 
   return (
-    <article className="brut-card overflow-hidden">
+    <article
+      className={`brut-card overflow-hidden ${
+        isWinner ? "ring-2 ring-butter ring-offset-2 ring-offset-paper" : ""
+      }`}
+    >
+      {isWinner && (
+        <div className="flex items-center gap-2 border-b-[2.5px] border-ink bg-butter px-4 py-2">
+          <span aria-hidden className="text-base leading-none">★</span>
+          <span className="font-mono text-[0.72rem] font-bold uppercase tracking-[0.16em]">
+            {award}
+          </span>
+        </div>
+      )}
+
       {/* screenshot strip */}
       <div className="grid grid-cols-3 gap-1.5 border-b-[2.5px] border-ink bg-paper-2 p-1.5">
         {submission.screenshots.map((src, i) => (
