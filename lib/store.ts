@@ -72,7 +72,10 @@ export async function listSubmissions(): Promise<Submission[]> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to load submissions: ${error.message}`);
+    // Stay resilient: if the table isn't set up yet (or a transient read
+    // error occurs), render an empty list rather than crashing the page.
+    console.error("listSubmissions failed:", error.message);
+    return [];
   }
   return (data as SubmissionRow[]).map(rowToSubmission);
 }
