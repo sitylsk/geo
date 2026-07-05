@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Ticker from "@/components/Ticker";
 import SubmissionForm from "@/components/SubmissionForm";
-import { LogoMark, ArrowRightIcon } from "@/components/Icons";
+import { LogoMark, ArrowRightIcon, DeviceIcon } from "@/components/Icons";
 import { listSubmissions } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
@@ -66,8 +66,8 @@ export default async function Home() {
           </div>
 
           {/* stat stack */}
-          <div className="relative mx-auto hidden w-full max-w-sm lg:block">
-            <div className="brut-card animate-floaty p-6">
+          <div className="animate-floaty mx-auto hidden w-full max-w-sm flex-col gap-4 lg:flex">
+            <div className="brut-card p-6">
               <p className="font-mono text-xs font-bold uppercase tracking-widest text-ink-soft">
                 Submissions
               </p>
@@ -80,9 +80,16 @@ export default async function Home() {
                 <span className="h-3 flex-1 rounded-full border-[2px] border-ink bg-butter" />
               </div>
             </div>
-            <div className="brut-card absolute -bottom-8 -left-6 p-4">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest">Built on device</p>
-              <p className="text-sm text-ink-soft">mobile-first</p>
+            <div className="brut-card flex items-center justify-between gap-4 p-4">
+              <div>
+                <p className="font-mono text-xs font-bold uppercase tracking-widest">
+                  Built on device
+                </p>
+                <p className="text-sm text-ink-soft">mobile-first</p>
+              </div>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border-[2.5px] border-ink bg-sky-soft">
+                <DeviceIcon className="h-5 w-5" />
+              </span>
             </div>
           </div>
         </div>
